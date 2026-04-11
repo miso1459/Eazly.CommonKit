@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/솔루션 항목/">
+    <File Path="logo-white.png" />
+    <File Path="SQL SERVER 2022 _TSQL.tdf" />
+    <File Path="Theme.css" />
+  </Folder>
+  <Project Path="Eazly.CommonKit.Module.TemplateURL/Client/Eazly.CommonKit.Module.TemplateURL.Client.csproj" />
+  <Project Path="Eazly.CommonKit.Module.TemplateURL/Package/Eazly.CommonKit.Module.TemplateURL.Package.csproj" />
+  <Project Path="Eazly.CommonKit.Module.TemplateURL/Server/Eazly.CommonKit.Module.TemplateURL.Server.csproj" />
+  <Project Path="Eazly.CommonKit.Module.TemplateURL/Shared/Eazly.CommonKit.Module.TemplateURL.Shared.csproj" />
+  <Project Path="oqtane.framework-dev/Oqtane.Server/Oqtane.Server.csproj">
+    <Build Solution="Debug|*" Project="false" />
+  </Project>
+</Solution>

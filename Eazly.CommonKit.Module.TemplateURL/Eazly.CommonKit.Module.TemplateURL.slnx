@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="..\oqtane.framework-dev\Oqtane.Server\Oqtane.Server.csproj" DefaultStartup="true">
+    <Build Solution="Debug|*" Project="false" />
+  </Project>
+  <Project Path="Client\Eazly.CommonKit.Module.TemplateURL.Client.csproj" />
+  <Project Path="Server\Eazly.CommonKit.Module.TemplateURL.Server.csproj" />
+  <Project Path="Shared\Eazly.CommonKit.Module.TemplateURL.Shared.csproj" />
+  <Project Path="Package\Eazly.CommonKit.Module.TemplateURL.Package.csproj" />
+</Solution>

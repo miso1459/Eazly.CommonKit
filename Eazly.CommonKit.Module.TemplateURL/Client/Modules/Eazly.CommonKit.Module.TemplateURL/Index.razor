@@ -1,0 +1,55 @@
+@using Eazly.CommonKit.Module.TemplateURL.Services
+@using Eazly.CommonKit.Module.TemplateURL.Models
+
+@namespace Eazly.CommonKit.Module.TemplateURL
+@inherits ModuleBase
+@inject ITemplateURLService ClientTemplateURLService
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<Index> Localizer
+
+@inject ISettingService SettingService
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+    }
+    .external-content {
+        width: 100%;
+        height: calc(100dvh - 58px);
+        border: 2px solid #ccc;
+    }
+</style>
+
+<iframe src="@_SettingName"
+        class="external-content"
+        title="외부 페이지"
+        loading="lazy"
+        referrerpolicy="no-referrer"
+        sandbox="allow-scripts allow-same-origin allow-popups">
+</iframe>
+
+@code {
+    public override string RenderMode => RenderModes.Static;
+
+    public override List<Resource> Resources => new List<Resource>()
+    {
+        new Stylesheet("_content/Eazly.CommonKit.Module.TemplateURL/Module.css"),
+        new Script("_content/Eazly.CommonKit.Module.TemplateURL/Module.js")
+    };
+
+    private string _SettingName = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Dictionary<string, string> settings = await SettingService.GetModuleSettingsAsync(ModuleState.ModuleId);
+            _SettingName = SettingService.GetSetting(settings, "SettingName", "");
+        }
+        catch (Exception ex)
+        {
+            await logger.LogError(ex, "Error Loading TemplateURL {Error}", ex.Message);
+            AddModuleMessage(Localizer["Message.LoadError"], MessageType.Error);
+        }
+    }
+}
