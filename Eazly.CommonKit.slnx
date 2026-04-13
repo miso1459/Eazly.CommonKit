@@ -1,9 +1,14 @@
 <Solution>
   <Folder Name="/솔루션 항목/">
+    <File Path="Eazly.CommonKit.Module.Template00/Todo.txt" />
     <File Path="logo-white.png" />
     <File Path="SQL SERVER 2022 _TSQL.tdf" />
     <File Path="Theme.css" />
   </Folder>
+  <Project Path="Eazly.CommonKit.Module.Template00/Client/Eazly.CommonKit.Module.Template00.Client.csproj" />
+  <Project Path="Eazly.CommonKit.Module.Template00/Package/Eazly.CommonKit.Module.Template00.Package.csproj" />
+  <Project Path="Eazly.CommonKit.Module.Template00/Server/Eazly.CommonKit.Module.Template00.Server.csproj" />
+  <Project Path="Eazly.CommonKit.Module.Template00/Shared/Eazly.CommonKit.Module.Template00.Shared.csproj" />
   <Project Path="Eazly.CommonKit.Module.TemplateURL/Client/Eazly.CommonKit.Module.TemplateURL.Client.csproj" />
   <Project Path="Eazly.CommonKit.Module.TemplateURL/Package/Eazly.CommonKit.Module.TemplateURL.Package.csproj" />
   <Project Path="Eazly.CommonKit.Module.TemplateURL/Server/Eazly.CommonKit.Module.TemplateURL.Server.csproj" />

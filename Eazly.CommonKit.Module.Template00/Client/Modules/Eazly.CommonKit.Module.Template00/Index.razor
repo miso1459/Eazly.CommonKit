@@ -1,0 +1,504 @@
+@using System.Data 
+@using System.Text.Json
+@using System.Linq.Dynamic.Core
+
+@using Eazly.CommonKit.Module.Template00.Services
+@using Eazly.CommonKit.Module.Template00.Models
+@using System.Threading.Tasks
+@using System.Dynamic
+
+@namespace Eazly.CommonKit.Module.Template00
+@inherits ModuleBase
+@inject ITemplate00Service ClientTemplate00Service
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<Index> Localizer
+@rendermode Microsoft.AspNetCore.Components.Web.RenderMode.InteractiveServer
+
+<style>
+    /* 1. 그리드 내부 테이블이 화면보다 커지더라도 압축되지 않도록 설정 */
+    .rz-datagrid-table {
+        width: max-content !important; /* 컬럼 너비 합계만큼 늘어남 */
+        table-layout: fixed !important; /* 설정된 Width 값을 강제로 유지 */
+    }
+
+    /* 2. 헤더와 데이터 영역 모두 동일하게 적용 */
+    .rz-grid-table {
+        width: max-content !important;
+        table-layout: fixed !important;
+    }
+
+    /* 3. 가로 스크롤바가 항상 나타나도록 설정 */
+    .rz-datagrid-table-wrapper {
+        overflow-x: auto !important;
+    }
+</style>
+
+@if (_isLoading)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <RadzenTheme Theme="Material" />
+    <RadzenComponents />
+
+    @* 조회조건 *@
+    <RadzenCard Variant="Variant.Outlined" class="rz-my-4">
+        <RadzenStack Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Left" AlignItems="AlignItems.Start" Gap="0.5rem" >
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Left" AlignItems="AlignItems.Center" Gap="1rem" >
+                <RadzenLabel Text="조회기간" />
+                <RadzenDatePicker @bind-Value=@_Condition.DateFrom DateFormat="yyyy-MM-dd" />
+                    <RadzenLabel Text="~" />
+                <RadzenDatePicker @bind-Value=@_Condition.DateTo DateFormat="yyyy-MM-dd" />
+            </RadzenStack>
+
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Left" AlignItems="AlignItems.Center" Gap="1rem">
+                <RadzenLabel Text="검색조건" />
+                <RadzenTextBox @bind-Value=@_Condition.SearchValue Placeholder="" Style="width: 505px" />
+            </RadzenStack>
+        </RadzenStack>
+    </RadzenCard>
+    
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Left" AlignItems="AlignItems.Normal" Gap="1rem">
+        <RadzenDataGrid @ref="grid1" Data="@_tableRows" TItem="ExpandoObject" AllowColumnResize="true"
+                        AllowSorting="true" AllowMultiColumnSorting="true" ShowMultiColumnSortingIndex="true"
+                        AllowFiltering="true" FilterMode="FilterMode.Simple" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" LogicalFilterOperator="LogicalFilterOperator.Or"
+                        SelectionMode="DataGridSelectionMode.Single" @bind-Value=@_selectedRows
+                        LoadData="@OnLoadData"
+                        Style="max-height: 1070px; width: 100%; overflow-y: auto;"
+                        class="rz-datagrid-scrollable-table">
+            <HeaderTemplate>
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Left" AlignItems="AlignItems.Normal" Gap="1rem">
+                    <RadzenLabel Text=" " />
+                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Primary" Click="@OnGetContents" Text=@Localizer["Query"] />
+                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Primary" Click="@OnSave" Text=@Localizer["Save"] Disabled="@_ContentsConifg.IsDisSave" />
+                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Success" Icon="add_circle" Text=@Localizer["NewRow"] Click="@InsertRow" Disabled="@_ContentsConifg.IsDisCreate" />
+                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Warning" Icon="refresh" Text=@Localizer["CancelRow"] Click="@(args => CancelRow())" Disabled="@_ContentsConifg.IsDisSave" />
+                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Danger" Icon="delete" Text=@Localizer["DeleteRow"] Click="@(args => DeleteRow())" Disabled="@_ContentsConifg.IsDisDelete" />
+                    
+                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Info" Text="Export XLS" Icon="grid_on" Click="@(args => Export("excel"))" Disabled="@_ContentsConifg.IsDisExport" />
+                </RadzenStack>
+            </HeaderTemplate>
+            <Columns>
+                <RadzenDataGridColumn TItem="ExpandoObject" Title="State" Width="90px" MinWidth="90px" MaxWidth="90px" TextAlign="TextAlign.Center" Property="_rowState" Filterable="false">
+                    <Template Context="row">
+                        @{
+                            var dict = (IDictionary<string, object>)row;
+                            string state = dict.ContainsKey("_rowState") && dict["_rowState"] != DBNull.Value ? dict["_rowState"].ToString() : string.Empty;
+
+                            string icon = "info";
+                            string color = "var(--rz-info)";
+
+                            if (state == "Insert") {
+                                icon = "add_circle"; color = "var(--rz-success)"; 
+                            } else if (state == "Delete") {
+                                icon = "remove_circle"; color = "var(--rz-danger)"; 
+                            } else if (state == "Update") { 
+                                icon = "edit"; color = "var(--rz-warning)"; 
+                            }
+                        }
+                        <RadzenIcon Icon="@icon" Style=@($"color: {color};") />
+                    </Template>
+                </RadzenDataGridColumn>
+
+                @foreach (DataColumn col in _dataTable.Columns)
+                {
+                    @if (ignoreList.Contains(col.ColumnName)) continue;
+
+                    var colName = col.ColumnName;
+
+                    @if (byList.Contains(colName))
+                    {
+                        <RadzenDataGridColumn TItem="ExpandoObject" Title="@colName" Width="100px" MinWidth="100px" Property="@colName" Type="col.DataType">
+                            <Template Context="row">
+                                @{
+                                    var dict = (IDictionary<string, object>)row;
+                                    string colValue = dict.ContainsKey(colName) && dict[colName] != DBNull.Value ? dict[colName].ToString() : string.Empty;
+                                }
+                                @colValue
+                            </Template>
+                        </RadzenDataGridColumn>
+                    }
+                    else if (onList.Contains(colName))
+                    {
+                        <RadzenDataGridColumn TItem="ExpandoObject" Title="@colName" Width="200px" MinWidth="200px" MaxWidth="200px" Property="@colName" Type="col.DataType" Filterable="false">
+                            <Template Context="row">
+                                @{
+                                    var dict = (IDictionary<string, object>)row;
+                                    string colValue = dict.ContainsKey(colName) && dict[colName] != DBNull.Value ? dict[colName].ToString() : string.Empty;
+                                }
+                                @colValue
+                            </Template>
+
+                        </RadzenDataGridColumn>
+                    }
+                    else
+                    {
+                        <RadzenDataGridColumn TItem="ExpandoObject" Title="@($"{colName}_Title")" Width="150px" MinWidth="100px" Property="@colName" Type="col.DataType">
+                            <Template Context="row"> 
+                                @{
+                                    var dict = (IDictionary<string, object>)row;
+                                    string colValue = dict.ContainsKey(colName) && dict[colName] != DBNull.Value ? dict[colName].ToString() : string.Empty;
+                                }
+                                @colValue
+                            </Template>
+
+                            <EditTemplate Context="row">
+                                @{
+                                    var dict = (IDictionary<string, object>)row;
+                                    string state = dict.ContainsKey("_rowState") && dict["_rowState"] != DBNull.Value ? dict["_rowState"].ToString() : string.Empty;
+                                    string colValue = dict.ContainsKey(colName) && dict[colName] != DBNull.Value ? dict[colName].ToString() : string.Empty;
+
+                                    @if (state == "Insert" || !primaryList.Contains(colName) || !readOnlyList.Contains(colName))
+                                    {
+                                        <RadzenTextBox Value="@colValue"
+                                                       Change="@(args => OnUpdateDataValue(row, colName, args))"
+                                                       Style="width:100%;" 
+                                        />
+                                    }
+                                    else
+                                        @colValue
+                                }
+                            </EditTemplate>
+                        </RadzenDataGridColumn>
+                    }
+                }
+            </Columns>
+        </RadzenDataGrid>
+    </RadzenStack>
+}
+
+@code {
+    public override string RenderMode => RenderModes.Headless;
+
+    public override List<Resource> Resources => new List<Resource>()
+    {
+        new Stylesheet("_content/Radzen.Blazor/css/material.css"),
+        new Resource { ResourceType = ResourceType.Script, Level = ResourceLevel.Site, Url = "_content/Radzen.Blazor/Radzen.Blazor.js" },
+
+        new Stylesheet("_content/Eazly.CommonKit.Module.Template00/Module.css"),
+        new Script("_content/Eazly.CommonKit.Module.Template00/Module.js"),
+    };
+
+    private bool _isLoading = true;
+
+    private Models.Contition _Condition;
+
+    private Models.ContentsConifg _ContentsConifg;
+    private DataTable _dataTable;
+    private IList<ExpandoObject> _tableRows = new List<ExpandoObject>();
+    private IList<ExpandoObject> _selectedRows;
+    private IList<ExpandoObject> _allRows = new List<ExpandoObject>();
+
+    private RadzenDataGrid<ExpandoObject> grid1;
+
+    private string[] ignoreList = { "TId", "_rowState", "TenantId", "SiteId" };
+    private string[] byList = { "CreatedBy", "ModifiedBy" };
+    private string[] onList = { "CreatedOn", "ModifiedOn" };
+    private string[] primaryList = { "CODE" };
+    private string[] readOnlyList = { "CODE" };
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _Condition = await ClientTemplate00Service.GetConditionAsync(ModuleState.ModuleId);
+
+            _ContentsConifg = await ClientTemplate00Service.GetConfigContentsAsync(ModuleState.ModuleId, "");
+
+            await OnGetContents();
+
+            _isLoading = false;
+        }
+        catch (Exception ex)
+        {
+            await logger.LogError(ex, "Error Loading Template00 {Error}", ex.Message);
+            AddModuleMessage(Localizer["Message.LoadError"], MessageType.Error);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await SetEditMode(grid1);
+        }
+    }
+
+    private async Task SetEditMode(RadzenDataGrid<ExpandoObject> grid)
+    {
+        if (grid != null && grid.IsValid)
+        { 
+            foreach (ExpandoObject row in _tableRows)
+            {
+                if (!grid.IsRowInEditMode(row))
+                    await grid.EditRow(row);
+            }
+        }
+    }
+
+    private async Task OnGetContents()
+    {
+        try
+        {
+            string jsonCondition = JsonSerializer.Serialize(_Condition);
+            _dataTable = await ClientTemplate00Service.GetContentsIDAsync(ModuleState.ModuleId, "", jsonCondition);
+
+            _tableRows = _dataTable.AsEnumerable().Select(row =>
+            {
+                var obj = new ExpandoObject() as IDictionary<string, object>;
+                foreach (DataColumn col in _dataTable.Columns)
+                {
+                    obj.Add(col.ColumnName, row[col]);
+                }
+                return (ExpandoObject)obj;
+            }).ToList();
+
+            _selectedRows = _tableRows.Take(1).ToList();
+            _allRows = _tableRows.ToList();
+
+            await SetEditMode(grid1);
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await logger.LogError(ex, "Error OnGetContents {Error}", ex.Message);
+            AddModuleMessage(Localizer["Message.QueryError"], MessageType.Error);
+        }
+    }
+
+    private async Task OnSave()
+    {
+        try
+        {
+            string jsonDataTable = string.Empty;
+            if (_tableRows != null && _tableRows.Count() > 0)
+            {
+                var jsonList = _tableRows.Where(row => !string.IsNullOrEmpty(((IDictionary<string, object>)row)["_rowState"]?.ToString())).ToList();
+                jsonDataTable = JsonSerializer.Serialize(jsonList);
+            }
+
+            await ClientTemplate00Service.ExecuteQueryIDAsync(ModuleState.ModuleId, "", jsonDataTable);
+
+            await OnGetContents();
+        }
+        catch (Exception ex)
+        {
+            await logger.LogError(ex, "Error OnSave {Error}", ex.Message);
+            AddModuleMessage(Localizer["Message.SaveError"], MessageType.Error);
+        }
+    }
+
+    private void Export(string type)
+    {
+
+    }
+
+    private async Task OnUpdateDataValue(ExpandoObject row, string colName, object newValue)
+    {
+        if (row == null) return;
+
+        var dict = (IDictionary<string, object>)row;
+        dict[colName] = newValue;
+
+        await OnUpdateRow(row);
+        await grid1.EditRow(row);
+    }
+
+    private async Task OnUpdateRow(ExpandoObject row)
+    {
+        if (!grid1.IsValid) return;
+
+        var dict = (IDictionary<string, object>)row;
+
+        if (dict["_rowState"].ToString() != "Insert")
+            dict["_rowState"] = "Update";
+
+        await grid1.UpdateRow(row);
+    }
+
+    private async Task InsertRow()
+    {
+        if (PageState.User == null) return;
+
+        if (!grid1.IsValid) return;
+
+        DataRow newRow = _dataTable.NewRow();
+        newRow["_rowState"] = "Insert";
+
+        foreach (DataColumn col in _dataTable.Columns)
+        {
+            if (ignoreList.Contains(col.ColumnName)) continue;
+
+            if (byList.Contains(col.ColumnName))
+                newRow[col.ColumnName] = PageState.User.Username;
+            else if (onList.Contains(col.ColumnName))
+                newRow[col.ColumnName] = DateTime.Now;
+            else if (!col.AllowDBNull)
+            {
+                if (col.DataType == typeof(string))
+                    newRow[col.ColumnName] = string.Empty;
+                else if (col.DataType == typeof(int) || col.DataType == typeof(long) || col.DataType == typeof(decimal) || col.DataType == typeof(double) || col.DataType == typeof(float))
+                    newRow[col.ColumnName] = 0;
+                else if (col.DataType == typeof(DateTime))
+                    newRow[col.ColumnName] = DateTime.Now;
+                else if (col.DataType == typeof(bool))
+                    newRow[col.ColumnName] = false;
+                else if (col.DataType.IsValueType)
+                    newRow[col.ColumnName] = Activator.CreateInstance(col.DataType);
+            }
+        }
+
+        // _dataTable.Rows.InsertAt(newRow, 0);
+
+        var expando = new ExpandoObject() as IDictionary<string, object>;
+        foreach (DataColumn col in newRow.Table.Columns)
+        {
+            expando[col.ColumnName] = newRow[col];
+        }
+
+        _tableRows.Insert(0, (ExpandoObject)expando);
+        _selectedRows = _tableRows.Take(1).ToList();
+        _allRows.Insert(0, (ExpandoObject)expando);
+
+        await grid1.Reload();
+
+        await SetEditMode(grid1);
+
+        StateHasChanged();
+    }
+
+    private async Task CancelRow()
+    {
+        if (!grid1.IsValid) return;
+
+        foreach (ExpandoObject row in _selectedRows)
+        {
+            await CancelRow(row);
+        }
+    }
+
+    private async Task CancelRow(ExpandoObject row)
+    {
+        if (!grid1.IsValid) return;
+
+        var dict = (IDictionary<string, object>)row;
+        string state = dict.ContainsKey("_rowState") && dict["_rowState"] != DBNull.Value ? dict["_rowState"].ToString() : string.Empty;
+
+        grid1.CancelEditRow(row);
+
+        if (state == "Insert")
+        {
+            _tableRows.Remove(row);
+            _allRows.Remove(row);
+
+			_tableRows = _tableRows.ToList();
+            _selectedRows = _tableRows.Take(1).ToList();
+
+            StateHasChanged();
+        }
+        else
+        {
+            DataRow[] dataRows = _dataTable.Select(string.Format("Tid = '{0}'", dict["TId"]));
+            if (dataRows.Length > 0)
+            {
+                DataRow dataRow = dataRows[0];
+
+                dict["_rowState"] = string.Empty;
+
+                if (dataRow.HasVersion(DataRowVersion.Original))
+                {
+                    foreach (DataColumn col in _dataTable.Columns)
+                    {
+                        if (ignoreList.Contains(col.ColumnName)) continue;
+                        if (byList.Contains(col.ColumnName)) continue;
+                        if (onList.Contains(col.ColumnName)) continue;
+
+                        dict[col.ColumnName] = dataRow[col.ColumnName, DataRowVersion.Original];
+                    }
+                }
+
+                await grid1.EditRow(row);
+            }
+        }
+    }
+
+    private async Task DeleteRow()
+    {
+        if (!grid1.IsValid) return;
+
+        foreach (ExpandoObject row in _selectedRows)
+        {
+            await DeleteRow(row);
+        }
+    }
+
+    private async Task DeleteRow(ExpandoObject row)
+    {
+        if (!grid1.IsValid) return;
+
+        var dict = (IDictionary<string, object>)row;
+        string state = dict.ContainsKey("_rowState") && dict["_rowState"] != DBNull.Value ? dict["_rowState"].ToString() : string.Empty;
+
+        if (state == "Insert")
+            await CancelRow(row);
+        else
+            dict["_rowState"] = "Delete";
+    }
+
+    private void OnLoadData(LoadDataArgs args)
+    {
+        if (_allRows != null && _allRows.Count > 0)
+        {
+            _tableRows = _allRows.ToList();
+        }
+
+        // 1. 원본 데이터에서 시작 (필터링 전 원본 보관 변수가 있다면 그것을 사용하세요)
+        IEnumerable<dynamic> query = _tableRows;
+
+        // 2. 필터링 로직 (추가된 부분)
+        if (args.Filters != null && args.Filters.Any())
+        {
+            foreach (var filter in args.Filters)
+            {
+                var prop = filter.Property;
+                var val = filter.FilterValue?.ToString().ToLower();
+                if (string.IsNullOrEmpty(val)) continue;
+
+                query = query.Where(x =>
+                {
+                    var dict = (IDictionary<string, object>)x;
+                    if (dict.ContainsKey(prop) && dict[prop] != null)
+                    {
+                        // 문자열 포함 여부 검사 (단순화된 예시)
+                        return dict[prop].ToString().ToLower().Contains(val);
+                    }
+                    return false;
+                });
+            }
+        }
+
+        // 3. 정렬 로직 (기존 코드 유지)
+        if (args.Sorts != null && args.Sorts.Any())
+        {
+            IOrderedEnumerable<dynamic> ordered = null;
+            foreach (var sort in args.Sorts)
+            {
+                var prop = sort.Property;
+                var isAsc = sort.SortOrder == SortOrder.Ascending;
+                Func<dynamic, object> keySelector = x => ((IDictionary<string, object>)x).ContainsKey(prop) ? ((IDictionary<string, object>)x)[prop] : null;
+
+                if (ordered == null)
+                    ordered = isAsc ? query.OrderBy(keySelector) : query.OrderByDescending(keySelector);
+                else
+                    ordered = isAsc ? ordered.ThenBy(keySelector) : ordered.ThenByDescending(keySelector);
+            }
+            if (ordered != null) query = ordered;
+        }
+
+        // 4. 최종 결과 반영
+        _tableRows = query.Select(x => (ExpandoObject)x).ToList();
+    }
+
+}

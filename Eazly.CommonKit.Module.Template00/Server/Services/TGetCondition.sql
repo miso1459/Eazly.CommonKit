@@ -1,0 +1,1 @@
+EXEC USP_@EntityName_Condition

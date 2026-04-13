@@ -1,0 +1,1 @@
+EXEC USP_@EntityName_Save @TenantId, @SiteId, N'@UserId', N'@JsonParam'

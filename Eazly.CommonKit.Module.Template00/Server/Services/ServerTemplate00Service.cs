@@ -1,0 +1,381 @@
+using Eazly.CommonKit.Module.Template00.Server.Services;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Oqtane.Enums;
+using Oqtane.Infrastructure;
+using Oqtane.Models;
+using Oqtane.Repository;
+using Oqtane.Security;
+using Oqtane.Shared;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
+using System.Security.Policy;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Eazly.CommonKit.Module.Template00.Services
+{
+    public class ServerTemplate00Service : ITemplate00Service
+    {
+        private readonly IUserPermissions _userPermissions;
+        private readonly ILogManager _logger;
+        private readonly IHttpContextAccessor _accessor;
+        private readonly Alias _alias;
+
+        private readonly ITenantManager _tenantManager;
+        private readonly ISqlRepository _sqlRepository;
+        private readonly string _userID;
+        private readonly int _tenantID;
+        private readonly int _siteID;
+        private string _EntityName;
+        private string _TableName;
+
+        public ServerTemplate00Service(IUserPermissions userPermissions, ITenantManager tenantManager, ILogManager logger, IHttpContextAccessor accessor, ISqlRepository sqlRepository)
+        {
+            _userPermissions = userPermissions;
+            _logger = logger;
+            _accessor = accessor;
+            _alias = tenantManager.GetAlias();
+
+            _tenantManager = tenantManager;
+            _sqlRepository = sqlRepository;
+
+            _userID = ((System.Security.Claims.ClaimsIdentity)_accessor.HttpContext.User.Identity).Name;
+            _tenantID = _tenantManager.GetTenant().TenantId;
+            _siteID = _alias.SiteId;
+        }
+
+        private string GetReplaceCreateQuery(string strQuery, int ModuleId, string queryID)
+        {
+            strQuery = strQuery.Replace("@EntityName", _EntityName);
+            strQuery = strQuery.Replace("@TableName", _TableName);
+			strQuery = strQuery.Replace("@ModuleId", ModuleId.ToString());
+			strQuery = strQuery.Replace("@QueryId", queryID);
+
+            return strQuery;
+        }
+
+        private string GetReplaceExcuteQuery(string strQuery, int ModuleId, string queryID, string jsonParam)
+        {
+            strQuery = GetReplaceCreateQuery(strQuery, ModuleId, queryID);
+            strQuery = strQuery.Replace("@TenantId", _tenantID.ToString());
+            strQuery = strQuery.Replace("@SiteId", _siteID.ToString());
+            strQuery = strQuery.Replace("@UserId", _userID);
+            strQuery = strQuery.Replace("@JsonParam", jsonParam);
+
+            return strQuery;
+        }
+
+        private void ExecuteScriptString(string strQuery)
+        {
+            try
+            {
+                _sqlRepository.ExecuteScript(_tenantManager.GetTenant(), strQuery);
+            }
+            catch (System.Exception)
+            {
+                _logger.Log(LogLevel.Error, this, LogFunction.Other, "ExecuteScriptString {strQuery}", strQuery);
+            }
+
+            return;
+        }
+
+        private bool ExecuteQueryString(string strQuery)
+        {
+            bool boolResult = false;
+            int intReturn = -1;
+
+            try
+            {
+                intReturn = _sqlRepository.ExecuteNonQuery(_tenantManager.GetTenant(), strQuery);
+            }
+            catch (System.Exception)
+            {
+                _logger.Log(LogLevel.Error, this, LogFunction.Other, "ExecuteQueryString {strQuery}", strQuery);
+            }
+
+            boolResult = intReturn > 0;
+
+            return boolResult;
+        }
+
+        private DataTable GetSQLQueryDtaTable(string strQuery)
+        {
+            if (string.IsNullOrWhiteSpace(strQuery))
+                return null;
+
+            using (SqlDataReader reader = (SqlDataReader)_sqlRepository.ExecuteReader(_tenantManager.GetTenant(), strQuery))
+            {
+                DataTable dt = null;
+                if (reader.VisibleFieldCount > 0)
+                {
+                    dt = new DataTable();
+                    dt.Load(reader);
+                }
+
+                return dt;
+            }
+        }
+        private string GetSQLQueryString(string strQuery)
+        {
+            string strResult = string.Empty;
+
+            DataTable dt = GetSQLQueryDtaTable(strQuery);
+
+            if (dt != null && dt.Rows.Count > 0 && dt.Columns.Count > 0)
+                strResult = dt.Rows[0][0].ToString();
+
+            return strResult;
+        }
+		private void CreateConfigTable(int ModuleId, string queryID)
+		{
+			if (!Debugger.IsAttached)
+				return;
+
+			string strCreateProcedure = ServerTemplateResources.TCreateConfigTable ?? string.Empty;
+
+			strCreateProcedure = GetReplaceExcuteQuery(strCreateProcedure, ModuleId, queryID, string.Empty);
+
+			ExecuteScriptString(strCreateProcedure);
+		}
+
+		private void CreateTableNProcedure(int ModuleId, string queryID)
+        {
+            if (string.IsNullOrEmpty(_EntityName))
+            {
+                DataTable dtSetting = GetSQLQueryDtaTable(string.Format("SELECT * FROM dbo.UFN_Setting({0}) A ", ModuleId.ToString()));
+
+                _EntityName = dtSetting.Rows[0]["EntityName"].ToString();
+                _TableName = dtSetting.Rows[0]["TableName"].ToString();
+            }
+
+            if (!Debugger.IsAttached)
+                return;
+
+            if (!string.IsNullOrEmpty(_TableName))
+            {
+                string strCreateTable = ServerTemplateResources.TCreateTable ?? string.Empty;
+                strCreateTable = GetReplaceCreateQuery(strCreateTable, ModuleId, queryID);
+                ExecuteScriptString(strCreateTable);
+            }
+
+            string strCreateProcedure = string.Empty;
+            if (queryID == "Condition")
+                strCreateProcedure = ServerTemplateResources.TCreateProdecureCondition ?? string.Empty;
+            else if (queryID == "Save")
+            {
+                strCreateProcedure = ServerTemplateResources.TCreateProdecureSaveContents ?? string.Empty;
+
+                string strCRUD = string.Empty;
+                if (!string.IsNullOrEmpty(_TableName))
+                {
+                    DataTable dtTable = GetSQLQueryDtaTable(string.Format("SELECT TOP 1 * FROM {0} A WHERE 1 <> 1", _TableName));
+
+                    string strOpenjsonTable = string.Empty;
+                    string strInsertColumnList = string.Empty;
+                    string strUpdateList = string.Empty;
+
+                    foreach (DataColumn dataColumn in dtTable.Columns)
+                    {
+                        string strDataType = string.Empty;
+                        switch (dataColumn.DataType)
+                        {
+                            case Type _ when dataColumn.DataType == typeof(int):
+                                strDataType = "INT";
+                                break;
+                            case Type _ when dataColumn.DataType == typeof(string):
+                                strDataType = "NVARCHAR(MAX)";
+                                break;
+                            case Type _ when dataColumn.DataType == typeof(DateTime):
+                                strDataType = "DATETIME";
+                                break;
+                            case Type _ when dataColumn.DataType == typeof(bool):
+                                strDataType = "BIT";
+                                break;
+                            case Type _ when dataColumn.DataType == typeof(decimal):
+                                strDataType = "DECIMAL(18, 2)";
+                                break;
+                            default:
+                                strDataType = "NVARCHARMAX)";
+                                break;
+                        }
+
+                        if ("TenantId,SiteId,CreatedBy,CreatedOn,ModifiedBy,ModifiedOn,".Contains(dataColumn.ColumnName + ","))
+                            continue;
+
+                        strOpenjsonTable += string.Format("\t\t\t[{0}] {1},\r\n", dataColumn.ColumnName, strDataType);
+
+                        if ("TId,".Contains(dataColumn.ColumnName + ","))
+                            continue;
+
+                        strInsertColumnList += string.Format(@"B.[{0}], ", dataColumn.ColumnName);
+                        strUpdateList += string.Format("\r\n\t\t\t\t\t[{0}] = B.[{0}],", dataColumn.ColumnName);
+                    }
+
+                    strOpenjsonTable = string.Format(@"OPENJSON(@JsonParam)
+	WITH (
+{0}			_rowState NVARCHAR(50)
+		)", strOpenjsonTable);
+
+                    strInsertColumnList += "@TenantId, @SiteId, @UserId, GETDATE(), @userId, GETDATE()";
+
+                    strUpdateList += "\r\n\t\t\t\t\tModifiedBy = @userId, ModifiedOn = GETDATE()";
+
+                    strCRUD = string.Format(@"
+	INSERT INTO {0}
+	SELECT	{1}
+	  FROM {2} B
+	LEFT JOIN {0} A ON (B.TId = A.TId)
+	WHERE B._rowState IN ('Insert', 'Update')
+	  AND A.TId IS NULL
+
+	UPDATE A SET {3}
+	  FROM {2} B
+	JOIN {0} A ON (B.TId = A.TId)
+	WHERE B._rowState IN ('Insert', 'Update')
+
+	DELETE A
+	  FROM {2} B
+	JOIN {0} A ON (B.TId = A.TId)
+	WHERE B._rowState IN ('Delete')
+", _TableName, strInsertColumnList, strOpenjsonTable, strUpdateList);
+                }
+
+                strCRUD = strCRUD.Replace("'", "''");
+                strCreateProcedure = strCreateProcedure.Replace("-- @CRUD", strCRUD);
+            }
+            else
+                strCreateProcedure = ServerTemplateResources.TCreateProdecureGetContents ?? string.Empty;
+
+            strCreateProcedure = GetReplaceCreateQuery(strCreateProcedure, ModuleId, queryID);
+            ExecuteScriptString(strCreateProcedure);
+        }
+
+        public Task<DataTable> GetContentsIDAsync(int ModuleId, string queryID, string jsonParam)
+        {
+            if (!_userPermissions.IsAuthorized(_accessor.HttpContext.User, _alias.SiteId, EntityNames.Module, ModuleId, PermissionNames.View))
+            {
+                _logger.Log(LogLevel.Error, this, LogFunction.Security, "Unauthorized Get Attempt {ModuleId}", ModuleId);
+                return null;
+            }
+
+            if (string.IsNullOrWhiteSpace(queryID))
+                queryID = "Query";
+
+            if (string.IsNullOrWhiteSpace(jsonParam))
+				jsonParam = "[]";
+
+            CreateTableNProcedure(ModuleId, queryID);
+
+            string strQuery = ServerTemplateResources.TGetContentsID ?? string.Empty;
+            strQuery = GetReplaceExcuteQuery(strQuery, ModuleId, queryID, jsonParam);
+            DataTable dt = GetSQLQueryDtaTable(strQuery);
+            dt.Columns.Add("_rowState", typeof(string));
+
+			dt.Columns.Remove("TenantId");
+			dt.Columns.Remove("SiteId");
+
+            return Task.FromResult(dt);
+        }
+
+        public Task ExecuteQueryIDAsync(int ModuleId, string queryID, string jsonParam)
+        {
+            if (!_userPermissions.IsAuthorized(_accessor.HttpContext.User, _alias.SiteId, EntityNames.Module, ModuleId, PermissionNames.Edit))
+            {
+                _logger.Log(LogLevel.Error, this, LogFunction.Security, "Unauthorized Get Attempt {ModuleId}", ModuleId);
+                return Task.CompletedTask;
+            }
+
+            if (string.IsNullOrWhiteSpace(queryID))
+                queryID = "Save";
+            if (string.IsNullOrWhiteSpace(jsonParam))
+				jsonParam = "[]";
+
+            CreateTableNProcedure(ModuleId, queryID);
+
+            string strQuery = ServerTemplateResources.TExecuteQueryID ?? string.Empty;
+            strQuery = GetReplaceExcuteQuery(strQuery, ModuleId, queryID, jsonParam);
+            ExecuteQueryString(strQuery);   
+
+            return Task.CompletedTask;
+        }
+
+        public Task<Models.Contition> GetConditionAsync(int ModuleId)
+        {
+            if (!_userPermissions.IsAuthorized(_accessor.HttpContext.User, _alias.SiteId, EntityNames.Module, ModuleId, PermissionNames.View))
+            {
+                _logger.Log(LogLevel.Error, this, LogFunction.Security, "Unauthorized Get Attempt {ModuleId}", ModuleId);
+                return null;
+            }
+
+            CreateTableNProcedure(ModuleId, "Condition");
+
+            Models.Contition condition = new()
+            {
+                DateFrom = System.DateTime.Now.AddDays(-7).Date,
+                DateTo = System.DateTime.Now.Date,
+                SearchValue = string.Empty
+            };
+
+            string strQuery = ServerTemplateResources.TGetCondition ?? string.Empty;
+
+            strQuery = strQuery.Replace("@EntityName", _EntityName);
+            strQuery = strQuery.Replace("@ModuleId", ModuleId.ToString());
+
+            DataTable dt = GetSQLQueryDtaTable(strQuery);
+
+            if (dt != null && dt.Rows.Count > 0)
+            {
+                condition.DateFrom = dt.Rows[0]["DateFrom"] != DBNull.Value ? Convert.ToDateTime(dt.Rows[0]["DateFrom"]) : condition.DateFrom;
+                condition.DateTo = dt.Rows[0]["DateTo"] != DBNull.Value ? Convert.ToDateTime(dt.Rows[0]["DateTo"]) : condition.DateTo;
+                condition.SearchValue = dt.Rows[0]["SearchValue"] != DBNull.Value ? dt.Rows[0]["SearchValue"].ToString() : condition.SearchValue;
+            }
+
+            return Task.FromResult(condition);
+        }
+
+		public Task<Models.ContentsConifg> GetConfigContentsAsync(int ModuleId, string queryID)
+		{
+			if (!_userPermissions.IsAuthorized(_accessor.HttpContext.User, _alias.SiteId, EntityNames.Module, ModuleId, PermissionNames.View))
+			{
+				_logger.Log(LogLevel.Error, this, LogFunction.Security, "Unauthorized Get Attempt {ModuleId}", ModuleId);
+				return null;
+			}
+
+			if (string.IsNullOrWhiteSpace(queryID))
+				queryID = "Query";
+
+			CreateConfigTable(ModuleId, queryID);
+
+			Models.ContentsConifg contentsConifg = new()
+			{
+                IsDisSave = false,
+                IsDisCreate = false,
+                IsDisUpdate = false,
+                IsDisDelete = false,
+                IsDisExport = false
+			};
+
+			string strQuery = ServerTemplateResources.TGetConfigContents ?? string.Empty;
+			strQuery = GetReplaceExcuteQuery(strQuery, ModuleId, queryID, "");
+			DataTable dt = GetSQLQueryDtaTable(strQuery);
+
+            if (dt != null && dt.Rows.Count > 0)
+            {
+                contentsConifg.IsDisCreate = dt.Rows[0]["IsCreate"] != DBNull.Value ? !(dt.Rows[0]["IsCreate"].ToString() == "Y") : contentsConifg.IsDisCreate;
+                contentsConifg.IsDisUpdate = dt.Rows[0]["IsUpdate"] != DBNull.Value ? !(dt.Rows[0]["IsUpdate"].ToString() == "Y") : contentsConifg.IsDisUpdate;
+                contentsConifg.IsDisDelete = dt.Rows[0]["IsDelete"] != DBNull.Value ? !(dt.Rows[0]["IsDelete"].ToString() == "Y") : contentsConifg.IsDisDelete;
+                contentsConifg.IsDisExport = dt.Rows[0]["IsExport"] != DBNull.Value ? !(dt.Rows[0]["IsExport"].ToString() == "Y") : contentsConifg.IsDisExport;
+
+				contentsConifg.IsDisSave = contentsConifg.IsDisCreate && contentsConifg.IsDisUpdate && contentsConifg.IsDisDelete;
+			}
+
+			return Task.FromResult(contentsConifg);
+		}
+	}
+}

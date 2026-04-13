@@ -1,0 +1,14 @@
+IF OBJECT_ID('USP_@EntityName_Condition', 'P') IS NULL
+	EXEC(N'
+CREATE PROCEDURE USP_@EntityName_Condition
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	SELECT	CAST(DATEADD(DAY, -7, GETDATE()) AS DATE) DateFrom,
+			CAST(DATEADD(DAY, 0, GETDATE()) AS DATE) DateTo,
+			'''' SearchValue
+
+END
+')
+GO

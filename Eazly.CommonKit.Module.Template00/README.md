@@ -1,0 +1,1 @@
+# Eazly.CommonKit.Module.Template00

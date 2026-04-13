@@ -1,0 +1,17 @@
+1. 기본기능 - Service
+ - Contents 기능
+   : ok - CRUD, Row Cancel
+   : ok - Grid: IsCreate, IsUpdate, IsDelete, IsCancel, IsExport
+ - Contents Layout Info
+   : ColumnTitle, DataType, IsVisible, IsEditable, IsRequired, IsPrimary, DefaultValue
+   : ComponentType, ComponentOptions, ValidationRules
+ 
+ - 왼쪽 아래 버튼 영역
+
+2. 기본기능 - Blazor
+ - Contents 기능
+   : ok - CRUD, Row Cancel
+   : ok - Grid: IsCreate, IsUpdate, IsDelete, IsCancel, IsExport
+ - Contents Layout Info
+   : ColumnTitle, DataType, IsVisible, IsEditable, IsRequired, IsPrimary, DefaultValue
+   : ComponentType, ComponentOptions, ValidationRules

@@ -1,0 +1,57 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
+    <Version>1.0.0</Version>
+    <Product>Eazly.CommonKit.Module.Template00</Product>
+    <Authors>Eazly.CommonKit</Authors>
+    <Company>Eazly.CommonKit</Company>
+    <Description>Template00</Description>
+    <Copyright>Eazly.CommonKit</Copyright>
+    <AssemblyName>Eazly.CommonKit.Module.Template00.Server.Oqtane</AssemblyName>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <StaticWebAssetsFingerprintContent>false</StaticWebAssetsFingerprintContent>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Remove="wwwroot\_content\**\*.*" />
+    <None Include="wwwroot\_content\**\*.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Localization" Version="10.0.3" />
+    <PackageReference Include="Radzen.Blazor" Version="10.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Shared\Eazly.CommonKit.Module.Template00.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Oqtane.Server" Version="10.1.1" />
+    <PackageReference Include="Oqtane.Shared" Version="10.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Services\ServerTemplateResources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ServerTemplateResources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Services\ServerTemplateResources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>ServerTemplateResources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="SQL\" />
+  </ItemGroup>
+</Project>

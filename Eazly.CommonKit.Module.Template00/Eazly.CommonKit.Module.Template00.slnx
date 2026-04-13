@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/솔루션 항목/">
+    <File Path="README.md" />
+    <File Path="Todo.txt" />
+  </Folder>
+  <Project Path="../oqtane.framework-dev/Oqtane.Client/Oqtane.Client.csproj" />
+  <Project Path="../oqtane.framework-dev/Oqtane.Shared/Oqtane.Shared.csproj" />
+  <Project Path="..\oqtane.framework-dev\Oqtane.Server\Oqtane.Server.csproj" />
+  <Project Path="Client\Eazly.CommonKit.Module.Template00.Client.csproj" />
+  <Project Path="Package\Eazly.CommonKit.Module.Template00.Package.csproj" />
+  <Project Path="Server\Eazly.CommonKit.Module.Template00.Server.csproj" />
+  <Project Path="Shared\Eazly.CommonKit.Module.Template00.Shared.csproj" />
+</Solution>

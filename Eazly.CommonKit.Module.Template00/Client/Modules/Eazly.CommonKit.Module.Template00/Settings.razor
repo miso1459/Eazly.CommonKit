@@ -1,0 +1,56 @@
+@namespace Eazly.CommonKit.Module.Template00
+@inherits ModuleBase
+@inject ISettingService SettingService
+@inject IStringLocalizer<Settings> Localizer
+
+<div class="container">
+    <div class="row mb-1 align-items-center">
+        <Label Class="col-sm-3" For="value" HelpText="Enter a Module Name" ResourceKey="SettingName" ResourceType="@resourceType">Module Name: </Label>
+            <div class="col-sm-9">
+                <input id="value" type="text" class="form-control" @bind="@_value" />
+            </div>
+    </div>
+    <div class="row mb-1 align-items-center">
+        <Label Class="col-sm-3" For="value" HelpText="Enter a Table Name" ResourceKey="TableName" ResourceType="@resourceType">Table Name: </Label>
+        <div class="col-sm-9">
+            <input id="value" type="text" class="form-control" @bind="@_tableName" />
+        </div>
+    </div>
+</div>
+
+@code {
+    private string resourceType = "Eazly.CommonKit.Module.Template00.Settings, Eazly.CommonKit.Module.Template00.Client.Oqtane"; // for localization
+    public override string Title => "Template00 Settings";
+
+    string _value;
+    string _tableName;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Dictionary<string, string> settings = await SettingService.GetModuleSettingsAsync(ModuleState.ModuleId);
+            _value = SettingService.GetSetting(settings, "SettingName", "");
+            _tableName = SettingService.GetSetting(settings, "TableName", "");
+        }
+        catch (Exception ex)
+        {
+            AddModuleMessage(ex.Message, MessageType.Error);
+        }
+    }
+
+    public async Task UpdateSettings()
+    {
+        try
+        {
+            var settings = await SettingService.GetModuleSettingsAsync(ModuleState.ModuleId);
+            settings = SettingService.SetSetting(settings, "SettingName", _value);
+            settings = SettingService.SetSetting(settings, "TableName", _tableName);
+            await SettingService.UpdateModuleSettingsAsync(settings, ModuleState.ModuleId);
+        }
+        catch (Exception ex)
+        {
+            AddModuleMessage(ex.Message, MessageType.Error);
+        }
+    }
+}

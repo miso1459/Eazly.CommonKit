@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>    
+    <Version>1.0.0</Version>
+    <Product>Eazly.CommonKit.Module.Template00</Product>
+    <Authors>Eazly.CommonKit</Authors>
+    <Company>Eazly.CommonKit</Company>
+    <Description>Template00</Description>
+    <Copyright>Eazly.CommonKit</Copyright>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <AssemblyName>Eazly.CommonKit.Module.Template00.Shared.Oqtane</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Oqtane.Shared" Version="10.1.1" />
+  </ItemGroup>
+
+</Project>
