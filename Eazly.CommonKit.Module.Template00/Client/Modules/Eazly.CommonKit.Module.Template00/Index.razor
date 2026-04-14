@@ -39,7 +39,7 @@
 }
 else
 {
-    <RadzenTheme Theme="Material-dark" />
+    <RadzenTheme Theme="material" />
     <RadzenComponents />
 
     @* 조회조건 *@
@@ -169,7 +169,7 @@ else
 }
 
 @code {
-    public override string RenderMode => RenderModes.Headless;
+    public override string RenderMode => RenderModes.Interactive;
 
     public override List<Resource> Resources => new List<Resource>()
     {
