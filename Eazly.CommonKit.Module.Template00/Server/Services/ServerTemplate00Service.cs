@@ -8,6 +8,7 @@ using Oqtane.Models;
 using Oqtane.Repository;
 using Oqtane.Security;
 using Oqtane.Shared;
+using Radzen;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -29,11 +30,11 @@ namespace Eazly.CommonKit.Module.Template00.Services
 
         private readonly ITenantManager _tenantManager;
         private readonly ISqlRepository _sqlRepository;
-        private readonly string _userID;
+        private readonly string _userID = string.Empty;
         private readonly int _tenantID;
         private readonly int _siteID;
-        private string _EntityName;
-        private string _TableName;
+        private string _EntityName = string.Empty;
+        private string _TableName = string.Empty;
 
         public ServerTemplate00Service(IUserPermissions userPermissions, ITenantManager tenantManager, ILogManager logger, IHttpContextAccessor accessor, ISqlRepository sqlRepository)
         {
@@ -45,7 +46,8 @@ namespace Eazly.CommonKit.Module.Template00.Services
             _tenantManager = tenantManager;
             _sqlRepository = sqlRepository;
 
-            _userID = ((System.Security.Claims.ClaimsIdentity)_accessor.HttpContext.User.Identity).Name;
+            if (_accessor != null && _accessor.HttpContext != null && _accessor.HttpContext.User != null)
+                _userID = ((System.Security.Claims.ClaimsIdentity)_accessor.HttpContext.User.Identity).Name;
             _tenantID = _tenantManager.GetTenant().TenantId;
             _siteID = _alias.SiteId;
         }
@@ -60,7 +62,7 @@ namespace Eazly.CommonKit.Module.Template00.Services
             return strQuery;
         }
 
-        private string GetReplaceExcuteQuery(string strQuery, int ModuleId, string queryID, string jsonParam)
+        private string GetReplaceExcuteQuery(string strQuery, int ModuleId, string queryID, string jsonParam = "")
         {
             strQuery = GetReplaceCreateQuery(strQuery, ModuleId, queryID);
             strQuery = strQuery.Replace("@TenantId", _tenantID.ToString());
@@ -150,8 +152,11 @@ namespace Eazly.CommonKit.Module.Template00.Services
             {
                 DataTable dtSetting = GetSQLQueryDtaTable(string.Format("SELECT * FROM dbo.UFN_Setting({0}) A ", ModuleId.ToString()));
 
-                _EntityName = dtSetting.Rows[0]["EntityName"].ToString();
-                _TableName = dtSetting.Rows[0]["TableName"].ToString();
+                if (dtSetting != null && dtSetting.Rows.Count > 0)
+                {
+                    _EntityName = dtSetting.Rows[0]["EntityName"].ToString();
+                    _TableName = dtSetting.Rows[0]["TableName"].ToString();
+                }
             }
 
             if (!Debugger.IsAttached)
@@ -256,6 +261,50 @@ namespace Eazly.CommonKit.Module.Template00.Services
             ExecuteScriptString(strCreateProcedure);
         }
 
+        private void SetDefaultConfigContentColumns(int ModuleId, string queryID, DataTable dtColumns)
+        {
+			string[] ignoreList = { "TId", "_rowState", "TenantId", "SiteId" };
+            string[] byList = { "CreatedBy", "ModifiedBy" };
+            string[] onList = { "CreatedOn", "ModifiedOn" };
+
+		string strSQL = @"
+INSERT INTO [Eazly.ConfigContentsColumns]
+SELECT ModuleId, QueryID, ColumnName, ColumnCaption, [IsPrimary], [IsEditable], [IsRequired], [IsVisible], [DefaultValue], [DataFormat], TenantId, SiteId, [CreatedBy], [CreatedOn], [ModifiedBy], [ModifiedOn] 
+  FROM (" + Environment.NewLine;
+
+            string strColumnList = @"SELECT @ModuleId ModuleId, '@QueryId' QueryID, '@ColumnName' ColumnName, '@ColumnCaption' ColumnCaption, 'N' [IsPrimary], '@IsEditable' [IsEditable], '@IsRequired' [IsRequired], 'Y' [IsVisible], '' [DefaultValue], '' [DataFormat], @TenantId TenantId, @SiteId SiteId, '@UserId' [CreatedBy], GETDATE() [CreatedOn], '@UserId' [ModifiedBy], GETDATE() [ModifiedOn]" + Environment.NewLine;
+
+            bool IsFirst = true;
+			foreach (DataColumn dataColumn in dtColumns.Columns)
+            {
+                if (ignoreList.Contains(dataColumn.ColumnName))
+                    continue;
+
+				strSQL += (IsFirst ? " " : "UNION ALL" + Environment.NewLine)+
+				GetReplaceExcuteQuery(strColumnList, ModuleId, queryID)
+                    .Replace("@ColumnName", dataColumn.ColumnName)
+                    .Replace("@ColumnCaption", dataColumn.Caption)
+					.Replace("@IsEditable", byList.Contains(dataColumn.ColumnName) || onList.Contains(dataColumn.ColumnName) ? "N" : "Y")
+					.Replace("@IsRequired", byList.Contains(dataColumn.ColumnName) || onList.Contains(dataColumn.ColumnName) || dataColumn.AllowDBNull ? "N" : "Y");
+
+				IsFirst = false;
+			}
+
+            strSQL += @"        ) A
+WHERE NOT EXISTS(   SELECT 1 FROM[Eazly.ConfigContentsColumns] WITH(NOLOCK)
+                    WHERE ModuleId = A.ModuleId AND QueryID = A.QueryID AND ColumnName = A.ColumnName
+                )";   
+
+            ExecuteScriptString(strSQL);
+		}
+
+		private void SetConfigContentColumns(int ModuleId, string queryID, DataTable dtColumns)
+		{
+            string strQuery = ServerTemplateResources.TGetConfigContentsColumns ?? string.Empty;
+            strQuery = GetReplaceExcuteQuery(strQuery, ModuleId, queryID);
+            DataTable dt = GetSQLQueryDtaTable(strQuery);
+        }
+
         public Task<DataTable> GetContentsIDAsync(int ModuleId, string queryID, string jsonParam)
         {
             if (!_userPermissions.IsAuthorized(_accessor.HttpContext.User, _alias.SiteId, EntityNames.Module, ModuleId, PermissionNames.View))
@@ -280,7 +329,10 @@ namespace Eazly.CommonKit.Module.Template00.Services
 			dt.Columns.Remove("TenantId");
 			dt.Columns.Remove("SiteId");
 
-            return Task.FromResult(dt);
+			SetDefaultConfigContentColumns(ModuleId, queryID, dt);
+			SetConfigContentColumns(ModuleId, queryID, dt);
+
+			return Task.FromResult(dt);
         }
 
         public Task ExecuteQueryIDAsync(int ModuleId, string queryID, string jsonParam)

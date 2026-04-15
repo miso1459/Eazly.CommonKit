@@ -147,4 +147,10 @@
   <data name="DeleteRow" xml:space="preserve">
     <value>Delete Row</value>
   </data>
+  <data name="ExportExcel" xml:space="preserve">
+    <value>Export Excel</value>
+  </data>
+  <data name="Message.ExportToExcelError" xml:space="preserve">
+    <value>Error Export To Excel</value>
+  </data>
 </root>

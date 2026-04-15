@@ -142,6 +142,9 @@
   <data name="TGetConfigContents" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>TGetConfigContents.sql;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>
+  <data name="TGetConfigContentsColumns" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>TGetConfigContentsColumns.sql;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
   <data name="TGetContentsID" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>TGetContentsID.sql;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>

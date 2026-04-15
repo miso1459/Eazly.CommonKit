@@ -83,8 +83,4 @@
   <ItemGroup>
     <Watch Remove="wwwroot\Modules\Templates\**" />
   </ItemGroup>
-  
-  <ItemGroup>
-    <Content Include="D:\Blazor\Theme.css" Link="Theme.css" />
-  </ItemGroup>
 </Project>

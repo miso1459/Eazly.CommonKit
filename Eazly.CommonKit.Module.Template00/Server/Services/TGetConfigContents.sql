@@ -1,3 +1,3 @@
-SELECT [IsCreate], [IsUpdate], [IsDelete], [IsExport]
+SELECT TOP 1 [IsCreate], [IsUpdate], [IsDelete], [IsExport]
   FROM [dbo].[Eazly.ConfigContents] (NOLOCK)
 WHERE TenantId = @TenantId AND SiteId = @SiteId AND ModuleId = @ModuleId AND QueryID = '@QueryId'

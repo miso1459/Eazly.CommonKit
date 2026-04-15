@@ -60,10 +60,10 @@ else
     </RadzenCard>
     
     <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Left" AlignItems="AlignItems.Normal" Gap="1rem">
-        <RadzenDataGrid @ref="grid1" Data="@_tableRows" TItem="ExpandoObject" AllowColumnResize="true"
+        <RadzenDataGrid @ref="grid1" Data="@_tableRows1" TItem="ExpandoObject" AllowColumnResize="true"
                         AllowSorting="true" AllowMultiColumnSorting="true" ShowMultiColumnSortingIndex="true"
                         AllowFiltering="true" FilterMode="FilterMode.Simple" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" LogicalFilterOperator="LogicalFilterOperator.Or"
-                        SelectionMode="DataGridSelectionMode.Single" @bind-Value=@_selectedRows
+                        SelectionMode="DataGridSelectionMode.Single" @bind-Value=@_selectedRows1
                         LoadData="@OnLoadData"
                         Style="max-height: 1070px; width: 100%; overflow-y: auto;"
                         class="rz-datagrid-scrollable-table">
@@ -76,7 +76,7 @@ else
                     <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Warning" Icon="refresh" Text=@Localizer["CancelRow"] Click="@(args => CancelRow())" Disabled="@_ContentsConifg.IsDisSave" />
                     <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Danger" Icon="delete" Text=@Localizer["DeleteRow"] Click="@(args => DeleteRow())" Disabled="@_ContentsConifg.IsDisDelete" />
                     
-                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Info" Text="Export XLS" Icon="grid_on" Click="@(args => Export("excel"))" Disabled="@_ContentsConifg.IsDisExport" />
+                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Info" Text="Export XLS" Icon="grid_on" Click="@(args => Export("excel", "grid1"))" Disabled="@_ContentsConifg.IsDisExport" />
                 </RadzenStack>
             </HeaderTemplate>
             <Columns>
@@ -187,9 +187,9 @@ else
 
     private Models.ContentsConifg _ContentsConifg;
     private DataTable _dataTable;
-    private IList<ExpandoObject> _tableRows = new List<ExpandoObject>();
-    private IList<ExpandoObject> _selectedRows;
-    private IList<ExpandoObject> _allRows = new List<ExpandoObject>();
+    private IList<ExpandoObject> _tableRows1 = new List<ExpandoObject>();
+    private IList<ExpandoObject> _selectedRows1;
+    private IList<ExpandoObject> _allRows1 = new List<ExpandoObject>();
 
     private RadzenDataGrid<ExpandoObject> grid1;
 
@@ -230,7 +230,7 @@ else
     {
         if (grid != null && grid.IsValid)
         { 
-            foreach (ExpandoObject row in _tableRows)
+            foreach (ExpandoObject row in _tableRows1)
             {
                 if (!grid.IsRowInEditMode(row))
                     await grid.EditRow(row);
@@ -245,7 +245,7 @@ else
             string jsonCondition = JsonSerializer.Serialize(_Condition);
             _dataTable = await ClientTemplate00Service.GetContentsIDAsync(ModuleState.ModuleId, "", jsonCondition);
 
-            _tableRows = _dataTable.AsEnumerable().Select(row =>
+            _tableRows1 = _dataTable.AsEnumerable().Select(row =>
             {
                 var obj = new ExpandoObject() as IDictionary<string, object>;
                 foreach (DataColumn col in _dataTable.Columns)
@@ -255,8 +255,8 @@ else
                 return (ExpandoObject)obj;
             }).ToList();
 
-            _selectedRows = _tableRows.Take(1).ToList();
-            _allRows = _tableRows.ToList();
+            _selectedRows1 = _tableRows1.Take(1).ToList();
+            _allRows1 = _tableRows1.ToList();
 
             await SetEditMode(grid1);
 
@@ -274,9 +274,9 @@ else
         try
         {
             string jsonDataTable = string.Empty;
-            if (_tableRows != null && _tableRows.Count() > 0)
+            if (_tableRows1 != null && _tableRows1.Count() > 0)
             {
-                var jsonList = _tableRows.Where(row => !string.IsNullOrEmpty(((IDictionary<string, object>)row)["_rowState"]?.ToString())).ToList();
+                var jsonList = _tableRows1.Where(row => !string.IsNullOrEmpty(((IDictionary<string, object>)row)["_rowState"]?.ToString())).ToList();
                 jsonDataTable = JsonSerializer.Serialize(jsonList);
             }
 
@@ -291,9 +291,17 @@ else
         }
     }
 
-    private void Export(string type)
+    private async Task Export(string type, string gridName)
     {
+        try
+        {
 
+        }
+        catch (Exception ex)
+        {
+            await logger.LogError(ex, "Error Export to Excel {Error}", ex.Message);
+            AddModuleMessage(Localizer["Message.ExportToExcelError"], MessageType.Error);
+        }
     }
 
     private async Task OnUpdateDataValue(ExpandoObject row, string colName, object newValue)
@@ -359,9 +367,9 @@ else
             expando[col.ColumnName] = newRow[col];
         }
 
-        _tableRows.Insert(0, (ExpandoObject)expando);
-        _selectedRows = _tableRows.Take(1).ToList();
-        _allRows.Insert(0, (ExpandoObject)expando);
+        _tableRows1.Insert(0, (ExpandoObject)expando);
+        _selectedRows1 = _tableRows1.Take(1).ToList();
+        _allRows1.Insert(0, (ExpandoObject)expando);
 
         await grid1.Reload();
 
@@ -374,7 +382,7 @@ else
     {
         if (!grid1.IsValid) return;
 
-        foreach (ExpandoObject row in _selectedRows)
+        foreach (ExpandoObject row in _selectedRows1)
         {
             await CancelRow(row);
         }
@@ -391,11 +399,11 @@ else
 
         if (state == "Insert")
         {
-            _tableRows.Remove(row);
-            _allRows.Remove(row);
+            _tableRows1.Remove(row);
+            _allRows1.Remove(row);
 
-			_tableRows = _tableRows.ToList();
-            _selectedRows = _tableRows.Take(1).ToList();
+			_tableRows1 = _tableRows1.ToList();
+            _selectedRows1 = _tableRows1.Take(1).ToList();
 
             StateHasChanged();
         }
@@ -429,7 +437,7 @@ else
     {
         if (!grid1.IsValid) return;
 
-        foreach (ExpandoObject row in _selectedRows)
+        foreach (ExpandoObject row in _selectedRows1)
         {
             await DeleteRow(row);
         }
@@ -450,13 +458,13 @@ else
 
     private void OnLoadData(LoadDataArgs args)
     {
-        if (_allRows != null && _allRows.Count > 0)
+        if (_allRows1 != null && _allRows1.Count > 0)
         {
-            _tableRows = _allRows.ToList();
+            _tableRows1 = _allRows1.ToList();
         }
 
         // 1. 원본 데이터에서 시작 (필터링 전 원본 보관 변수가 있다면 그것을 사용하세요)
-        IEnumerable<dynamic> query = _tableRows;
+        IEnumerable<dynamic> query = _tableRows1;
 
         // 2. 필터링 로직 (추가된 부분)
         if (args.Filters != null && args.Filters.Any())
@@ -499,7 +507,7 @@ else
         }
 
         // 4. 최종 결과 반영
-        _tableRows = query.Select(x => (ExpandoObject)x).ToList();
+        _tableRows1 = query.Select(x => (ExpandoObject)x).ToList();
     }
 
 }

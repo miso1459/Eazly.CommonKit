@@ -60,54 +60,177 @@ namespace Eazly.CommonKit.Module.Template00.Server.Services {
             }
         }
         
+        /// <summary>
+        ///   IF  NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N&apos;[dbo].[Eazly.ConfigContents]&apos;) AND type in (N&apos;U&apos;))
+        ///CREATE TABLE [dbo].[Eazly.ConfigContents](
+        ///	[ModuleId] [int] NOT NULL,
+        ///	[QueryID] [nvarchar](255) NOT NULL,
+        ///	[IsCreate] [nchar](1) NOT NULL,
+        ///    [IsUpdate] [nchar](1) NOT NULL,
+        ///    [IsDelete] [nchar](1) NOT NULL,
+        ///    [IsExport] [nchar](1) NOT NULL,
+        ///	[TenantId] [int] NOT NULL,
+        ///	[SiteId] [int] NOT NULL,
+        ///	[CreatedBy] [nvarchar](256) NOT NULL,
+        ///	[CreatedOn] [datetime2](7) NOT NULL[나머지 문자열은 잘림]&quot;;과(와) 유사한 지역화된 문자열을 찾습니다.
+        /// </summary>
         internal static string TCreateConfigTable {
             get {
                 return ResourceManager.GetString("TCreateConfigTable", resourceCulture);
             }
         }
         
+        /// <summary>
+        ///   IF OBJECT_ID(&apos;USP_@EntityName_Condition&apos;, &apos;P&apos;) IS NULL
+        ///	EXEC(N&apos;
+        ///CREATE PROCEDURE USP_@EntityName_Condition
+        ///AS
+        ///BEGIN
+        ///	SET NOCOUNT ON;
+        ///
+        ///	SELECT	CAST(DATEADD(DAY, -7, GETDATE()) AS DATE) DateFrom,
+        ///			CAST(DATEADD(DAY, 0, GETDATE()) AS DATE) DateTo,
+        ///			&apos;&apos;&apos;&apos; SearchValue
+        ///
+        ///END
+        ///&apos;)
+        ///GO과(와) 유사한 지역화된 문자열을 찾습니다.
+        /// </summary>
         internal static string TCreateProdecureCondition {
             get {
                 return ResourceManager.GetString("TCreateProdecureCondition", resourceCulture);
             }
         }
         
+        /// <summary>
+        ///   IF OBJECT_ID(&apos;USP_@EntityName_@QueryId&apos;, &apos;P&apos;) IS NULL
+        ///	EXEC(N&apos;
+        ///CREATE PROCEDURE USP_@EntityName_@QueryId(
+        ///	@TenantId	INT,
+        ///	@SiteId		INT,
+        ///	@UserId		NVARCHAR(256),
+        ///	@JsonParam	NVARCHAR(4000)
+        ///)
+        ///AS
+        ///BEGIN
+        ///	SET NOCOUNT ON;
+        ///
+        ///	DECLARE @dateFrom		DATETIME2(7),
+        ///			@dateTo			DATETIME2(7),
+        ///			@searchValue	NVARCHAR(256);
+        ///
+        ///	SELECT	@dateFrom		= MAX(CASE WHEN [KEY] = &apos;&apos;DateFrom&apos;&apos;	THEN [value] ELSE NULL END),
+        ///			@dateTo			= MAX(CASE WHEN [KEY] = &apos;&apos;DateTo&apos;&apos;		THEN [value] ELSE NULL END),
+        ///			@searchValue	= MA[나머지 문자열은 잘림]&quot;;과(와) 유사한 지역화된 문자열을 찾습니다.
+        /// </summary>
         internal static string TCreateProdecureGetContents {
             get {
                 return ResourceManager.GetString("TCreateProdecureGetContents", resourceCulture);
             }
         }
         
+        /// <summary>
+        ///   IF OBJECT_ID(&apos;USP_@EntityName_Save_Pre&apos;, &apos;P&apos;) IS NULL
+        ///	EXEC(N&apos;
+        ///CREATE PROCEDURE USP_@EntityName_Save_Pre(
+        ///	@TenantId	INT,
+        ///	@SiteId		INT,
+        ///	@UserId		NVARCHAR(256),
+        ///	@JsonParam	NVARCHAR(4000)
+        ///)
+        ///AS
+        ///BEGIN
+        ///	SET NOCOUNT ON;
+        ///
+        ///    -- TODO: 구현
+        ///
+        ///    -- SELECT * FROM OPENJSON(@JsonParam)
+        ///
+        ///	-- 본 저장 프로시저 실행 필요 없으면 RERUN 9
+        ///	-- RETURN 9
+        ///
+        ///    RETURN 1;
+        ///END
+        ///&apos;)
+        ///GO
+        ///
+        ///IF OBJECT_ID(&apos;USP_@EntityName_Save_Post&apos;, &apos;P&apos;) IS NULL
+        ///	EXEC(N&apos;
+        ///CREATE PROCEDURE USP_@EntityName_Save_Post(
+        ///	@TenantId	INT,
+        ///	@SiteId		I[나머지 문자열은 잘림]&quot;;과(와) 유사한 지역화된 문자열을 찾습니다.
+        /// </summary>
         internal static string TCreateProdecureSaveContents {
             get {
                 return ResourceManager.GetString("TCreateProdecureSaveContents", resourceCulture);
             }
         }
         
+        /// <summary>
+        ///   IF  NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N&apos;[dbo].[@TableName]&apos;) AND type in (N&apos;U&apos;))
+        ///CREATE TABLE [dbo].[@TableName](
+        ///	[TId] [int] IDENTITY(1,1) NOT NULL,
+        ///	[Desc] [nvarchar](255) NULL,
+        ///
+        ///	[TenantId] [int] NOT NULL,
+        ///	[SiteId] [int] NOT NULL,
+        ///	[CreatedBy] [nvarchar](256) NOT NULL,
+        ///	[CreatedOn] [datetime2](7) NOT NULL,
+        ///	[ModifiedBy] [nvarchar](256) NOT NULL,
+        ///	[ModifiedOn] [datetime2](7) NOT NULL,
+        /// CONSTRAINT [PK_@TableName] PRIMARY KEY CLUSTERED 
+        ///(
+        ///	[TId] ASC
+        ///)WITH (PAD[나머지 문자열은 잘림]&quot;;과(와) 유사한 지역화된 문자열을 찾습니다.
+        /// </summary>
         internal static string TCreateTable {
             get {
                 return ResourceManager.GetString("TCreateTable", resourceCulture);
             }
         }
         
+        /// <summary>
+        ///   EXEC USP_@EntityName_Save @TenantId, @SiteId, N&apos;@UserId&apos;, N&apos;@JsonParam&apos;과(와) 유사한 지역화된 문자열을 찾습니다.
+        /// </summary>
         internal static string TExecuteQueryID {
             get {
                 return ResourceManager.GetString("TExecuteQueryID", resourceCulture);
             }
         }
         
+        /// <summary>
+        ///   EXEC USP_@EntityName_Condition과(와) 유사한 지역화된 문자열을 찾습니다.
+        /// </summary>
         internal static string TGetCondition {
             get {
                 return ResourceManager.GetString("TGetCondition", resourceCulture);
             }
         }
         
+        /// <summary>
+        ///   SELECT [IsCreate], [IsUpdate], [IsDelete], [IsExport]
+        ///  FROM [dbo].[Eazly.ConfigContents] (NOLOCK)
+        ///WHERE TenantId = @TenantId AND SiteId = @SiteId AND ModuleId = @ModuleId AND QueryID = &apos;@QueryId&apos;과(와) 유사한 지역화된 문자열을 찾습니다.
+        /// </summary>
         internal static string TGetConfigContents {
             get {
                 return ResourceManager.GetString("TGetConfigContents", resourceCulture);
             }
         }
         
+        /// <summary>
+        ///   과(와) 유사한 지역화된 문자열을 찾습니다.
+        /// </summary>
+        internal static string TGetConfigContentsColumns {
+            get {
+                return ResourceManager.GetString("TGetConfigContentsColumns", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   EXEC USP_@EntityName_@QueryId @TenantId, @SiteId, N&apos;@UserId&apos;, N&apos;@JsonParam&apos;
+        ///과(와) 유사한 지역화된 문자열을 찾습니다.
+        /// </summary>
         internal static string TGetContentsID {
             get {
                 return ResourceManager.GetString("TGetContentsID", resourceCulture);
