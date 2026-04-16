@@ -133,13 +133,14 @@ else
                     }
                     else
                     {
-                        <RadzenDataGridColumn TItem="ExpandoObject" Title="@col.Caption" Width="150px" MinWidth="100px" Property="@colName" Type="col.DataType" Visible="@IsColumnVisible(col)">
+                        <RadzenDataGridColumn TItem="ExpandoObject" Title="@col.Caption" Width="@GetColumnWidth(col)" Property="@colName" Type="col.DataType" Visible="@IsColumnVisible(col)">
                             <Template Context="row"> 
                                 @{
                                     var dict = (IDictionary<string, object>)row;
                                     string colValue = dict.ContainsKey(colName) && dict[colName] != DBNull.Value ? dict[colName].ToString() : string.Empty;
                                 }
-                                @colValue
+
+                                @GetColumnFormatValue(col, colValue)
                             </Template>
 
                             <EditTemplate Context="row">
@@ -149,7 +150,7 @@ else
                                     string colValue = dict.ContainsKey(colName) && dict[colName] != DBNull.Value ? dict[colName].ToString() : string.Empty;
 
                                     @if (col.ReadOnly || (state != "Insert" && IsColumnPrimary(col)))
-                                        @colValue
+                                        @GetColumnFormatValue(col, colValue)
                                     else
                                     {
                                         <RadzenTextBox Value="@colValue"
@@ -259,6 +260,36 @@ else
         }
 
         return isVisible;
+    }
+
+    private string GetColumnWidth(DataColumn dataColumn)
+    {
+        int iWidth = 100;
+
+        if (dataColumn != null)
+        {
+            if (dataColumn.ExtendedProperties.ContainsKey("Width"))
+                iWidth = Convert.ToInt32(dataColumn.ExtendedProperties["Width"]);
+        }
+
+        return iWidth.ToString()+"px";
+    }
+
+    private string GetColumnFormatValue(DataColumn dataColumn, string strValue)
+    {
+		string strFormatValue = strValue;
+
+        if (dataColumn != null)
+        {
+            if (dataColumn.ExtendedProperties.ContainsKey("DataFormat"))
+            {
+				string strDataFormat = dataColumn.ExtendedProperties["DataFormat"].ToString();
+				if (!string.IsNullOrEmpty(strDataFormat))
+                    strFormatValue = string.Format(strDataFormat, strValue);
+            }
+        }
+
+        return strFormatValue;
     }
 
     private async Task OnGetContents()

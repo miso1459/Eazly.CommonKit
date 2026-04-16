@@ -269,10 +269,10 @@ namespace Eazly.CommonKit.Module.Template00.Services
 
 		string strSQL = @"
 INSERT INTO [Eazly.ConfigContentsColumns]
-SELECT ModuleId, QueryID, ColumnName, ColumnCaption, [IsPrimary], [IsEditable], [IsRequired], [IsVisible], [DefaultValue], [DataFormat], TenantId, SiteId, [CreatedBy], [CreatedOn], [ModifiedBy], [ModifiedOn] 
+SELECT ModuleId, QueryID, ColumnName, ColumnCaption, [IsPrimary], [IsEditable], [IsRequired], [IsVisible], [DefaultValue], [DataFormat], [Width], TenantId, SiteId, [CreatedBy], [CreatedOn], [ModifiedBy], [ModifiedOn] 
   FROM (" + Environment.NewLine;
 
-            string strColumnList = @"SELECT @ModuleId ModuleId, '@QueryId' QueryID, '@ColumnName' ColumnName, '@ColumnCaption' ColumnCaption, 'N' [IsPrimary], '@IsEditable' [IsEditable], '@IsRequired' [IsRequired], 'Y' [IsVisible], '' [DefaultValue], '' [DataFormat], @TenantId TenantId, @SiteId SiteId, '@UserId' [CreatedBy], GETDATE() [CreatedOn], '@UserId' [ModifiedBy], GETDATE() [ModifiedOn]" + Environment.NewLine;
+            string strColumnList = @"SELECT @ModuleId ModuleId, '@QueryId' QueryID, '@ColumnName' ColumnName, '@ColumnCaption' ColumnCaption, 'N' [IsPrimary], '@IsEditable' [IsEditable], '@IsRequired' [IsRequired], 'Y' [IsVisible], '' [DefaultValue], '' [DataFormat], 0 [Width], @TenantId TenantId, @SiteId SiteId, '@UserId' [CreatedBy], GETDATE() [CreatedOn], '@UserId' [ModifiedBy], GETDATE() [ModifiedOn]" + Environment.NewLine;
 
             bool IsFirst = true;
 			foreach (DataColumn dataColumn in dtColumns.Columns)
@@ -343,6 +343,7 @@ WHERE NOT EXISTS(   SELECT 1 FROM[Eazly.ConfigContentsColumns] WITH(NOLOCK)
 				dataColumn.ExtendedProperties["IsPrimary"] = dataRows[0]["IsPrimary"].ToString();
 				dataColumn.ExtendedProperties["IsVisible"] = dataRows[0]["IsVisible"].ToString();
 				dataColumn.ExtendedProperties["DataFormat"] = dataRows[0]["DataFormat"].ToString();
+				dataColumn.ExtendedProperties["Width"] = dataRows[0]["Width"];
 			}
         }
 
