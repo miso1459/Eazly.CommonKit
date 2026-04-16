@@ -5,7 +5,8 @@
    : ok - CRUD, Row Cancel
    : ok - Grid: IsCreate, IsUpdate, IsDelete, IsCancel, IsExport
  - Contents Layout Info
-   : [ColumnName], [ColumnCaption], [IsPrimary], [IsEditable], [IsRequired], [IsVisible], [DefaultValue], [DataFormat]
+   : ok - [ColumnName], [ColumnCaption], [IsPrimary], [IsEditable], [IsRequired], [IsVisible], [DefaultValue] 
+   : [DataFormat], [Width]
    : ComponentType, ComponentOptions, ValidationRules
  
  - 왼쪽 아래 버튼 영역
@@ -15,5 +16,6 @@
    : ok - CRUD, Row Cancel
    : ok - Grid: IsCreate, IsUpdate, IsDelete, IsCancel, IsExport
  - Contents Layout Info
-   : [ColumnName], [ColumnCaption], [IsPrimary], [IsEditable], [IsRequired], [IsVisible], [DefaultValue], [DataFormat]
+   : ok - [ColumnName], [ColumnCaption], [IsPrimary], [IsEditable], [IsRequired], [IsVisible], [DefaultValue]
+   : [DataFormat], [Width]
    : ComponentType, ComponentOptions, ValidationRules

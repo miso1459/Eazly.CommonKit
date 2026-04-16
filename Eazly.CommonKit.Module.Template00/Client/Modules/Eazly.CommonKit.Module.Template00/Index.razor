@@ -129,12 +129,11 @@ else
                                 }
                                 @colValue
                             </Template>
-
                         </RadzenDataGridColumn>
                     }
                     else
                     {
-                        <RadzenDataGridColumn TItem="ExpandoObject" Title="@($"{colName}_Title")" Width="150px" MinWidth="100px" Property="@colName" Type="col.DataType">
+                        <RadzenDataGridColumn TItem="ExpandoObject" Title="@col.Caption" Width="150px" MinWidth="100px" Property="@colName" Type="col.DataType" Visible="@IsColumnVisible(col)">
                             <Template Context="row"> 
                                 @{
                                     var dict = (IDictionary<string, object>)row;
@@ -149,15 +148,15 @@ else
                                     string state = dict.ContainsKey("_rowState") && dict["_rowState"] != DBNull.Value ? dict["_rowState"].ToString() : string.Empty;
                                     string colValue = dict.ContainsKey(colName) && dict[colName] != DBNull.Value ? dict[colName].ToString() : string.Empty;
 
-                                    @if (state == "Insert" || !primaryList.Contains(colName) || !readOnlyList.Contains(colName))
+                                    @if (col.ReadOnly || (state != "Insert" && IsColumnPrimary(col)))
+                                        @colValue
+                                    else
                                     {
                                         <RadzenTextBox Value="@colValue"
                                                        Change="@(args => OnUpdateDataValue(row, colName, args))"
                                                        Style="width:100%;" 
                                         />
                                     }
-                                    else
-                                        @colValue
                                 }
                             </EditTemplate>
                         </RadzenDataGridColumn>
@@ -196,8 +195,6 @@ else
     private string[] ignoreList = { "TId", "_rowState", "TenantId", "SiteId" };
     private string[] byList = { "CreatedBy", "ModifiedBy" };
     private string[] onList = { "CreatedOn", "ModifiedOn" };
-    private string[] primaryList = { "CODE" };
-    private string[] readOnlyList = { "CODE" };
 
     protected override async Task OnInitializedAsync()
     {
@@ -236,6 +233,32 @@ else
                     await grid.EditRow(row);
             }
         }
+    }
+
+    private bool IsColumnPrimary(DataColumn dataColumn)
+    {
+        bool isPrimary = false;
+
+        if (dataColumn != null)
+        {
+            if (dataColumn.ExtendedProperties.ContainsKey("IsPrimary"))
+                isPrimary = dataColumn.ExtendedProperties["IsPrimary"]?.ToString().ToUpper() == "Y";
+        }
+
+        return isPrimary;
+    }
+
+    private bool IsColumnVisible(DataColumn dataColumn)
+    {
+        bool isVisible = false;
+
+        if (dataColumn != null)
+        {
+            if (dataColumn.ExtendedProperties.ContainsKey("IsVisible"))
+                isVisible = dataColumn.ExtendedProperties["IsVisible"]?.ToString().ToUpper() == "Y";
+        }
+
+        return isVisible;
     }
 
     private async Task OnGetContents()
@@ -344,7 +367,7 @@ else
                 newRow[col.ColumnName] = PageState.User.Username;
             else if (onList.Contains(col.ColumnName))
                 newRow[col.ColumnName] = DateTime.Now;
-            else if (!col.AllowDBNull)
+            else if (!col.AllowDBNull && newRow[col.ColumnName] == null)
             {
                 if (col.DataType == typeof(string))
                     newRow[col.ColumnName] = string.Empty;

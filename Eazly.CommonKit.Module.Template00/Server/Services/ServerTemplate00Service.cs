@@ -277,8 +277,7 @@ SELECT ModuleId, QueryID, ColumnName, ColumnCaption, [IsPrimary], [IsEditable], 
             bool IsFirst = true;
 			foreach (DataColumn dataColumn in dtColumns.Columns)
             {
-                if (ignoreList.Contains(dataColumn.ColumnName))
-                    continue;
+                if (ignoreList.Contains(dataColumn.ColumnName)) continue;
 
 				strSQL += (IsFirst ? " " : "UNION ALL" + Environment.NewLine)+
 				GetReplaceExcuteQuery(strColumnList, ModuleId, queryID)
@@ -300,9 +299,51 @@ WHERE NOT EXISTS(   SELECT 1 FROM[Eazly.ConfigContentsColumns] WITH(NOLOCK)
 
 		private void SetConfigContentColumns(int ModuleId, string queryID, DataTable dtColumns)
 		{
-            string strQuery = ServerTemplateResources.TGetConfigContentsColumns ?? string.Empty;
+			string[] ignoreList = { "TId", "_rowState", "TenantId", "SiteId" };
+
+			string strQuery = ServerTemplateResources.TGetConfigContentsColumns ?? string.Empty;
             strQuery = GetReplaceExcuteQuery(strQuery, ModuleId, queryID);
             DataTable dt = GetSQLQueryDtaTable(strQuery);
+
+            DataRow[] dataRows = null;
+            foreach (DataColumn dataColumn in dtColumns.Columns)
+            {
+				if (ignoreList.Contains(dataColumn.ColumnName)) continue;
+
+				dataRows = dt.Select(string.Format("ColumnName = '{0}'", dataColumn.ColumnName));
+                if (dataRows.Length == 0) continue;
+
+                dataColumn.Caption = dataRows[0]["ColumnCaption"].ToString();
+                dataColumn.ReadOnly = !dataRows[0]["IsEditable"].ToString().ToUpper().Equals("Y");
+                dataColumn.AllowDBNull = !dataRows[0]["IsRequired"].ToString().ToUpper().Equals("Y");
+                switch (dataColumn.DataType)
+                {
+					case Type _ when dataColumn.DataType == typeof(string):
+                        dataColumn.DefaultValue = dataRows[0]["DefaultValue"].ToString();
+						break;
+					case Type _ when dataColumn.DataType == typeof(decimal):
+                        if (decimal.TryParse(dataRows[0]["DefaultValue"].ToString(), out decimal decValue))
+                            dataColumn.DefaultValue = decValue;
+                        else
+                            dataColumn.DefaultValue = 0;
+						break;
+					case Type _ when dataColumn.DataType == typeof(DateTime):
+						if (dataRows[0]["DefaultValue"].ToString().Equals("Today", StringComparison.InvariantCultureIgnoreCase))
+							dataColumn.DefaultValue = DateTime.Today;
+						else if (dataRows[0]["DefaultValue"].ToString().Equals("Now", StringComparison.InvariantCultureIgnoreCase))
+                            dataColumn.DefaultValue = DateTime.Now;
+						else if (DateTime.TryParse(dataRows[0]["DefaultValue"].ToString(), out DateTime dateValue))
+                            dataColumn.DefaultValue = dateValue;
+						else
+							dataColumn.DefaultValue = null;
+                        break;
+					default:
+                        break;
+                }
+				dataColumn.ExtendedProperties["IsPrimary"] = dataRows[0]["IsPrimary"].ToString();
+				dataColumn.ExtendedProperties["IsVisible"] = dataRows[0]["IsVisible"].ToString();
+				dataColumn.ExtendedProperties["DataFormat"] = dataRows[0]["DataFormat"].ToString();
+			}
         }
 
         public Task<DataTable> GetContentsIDAsync(int ModuleId, string queryID, string jsonParam)
@@ -431,3 +472,4 @@ WHERE NOT EXISTS(   SELECT 1 FROM[Eazly.ConfigContentsColumns] WITH(NOLOCK)
 		}
 	}
 }
+ 
