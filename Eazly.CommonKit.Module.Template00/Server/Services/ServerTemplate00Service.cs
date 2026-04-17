@@ -315,7 +315,7 @@ WHERE NOT EXISTS(   SELECT 1 FROM[Eazly.ConfigContentsColumns] WITH(NOLOCK)
 
                 dataColumn.Caption = dataRows[0]["ColumnCaption"].ToString();
                 dataColumn.ReadOnly = !dataRows[0]["IsEditable"].ToString().ToUpper().Equals("Y");
-                dataColumn.AllowDBNull = !dataRows[0]["IsRequired"].ToString().ToUpper().Equals("Y");
+                dataColumn.AllowDBNull = !dataRows[0]["IsRequired"].ToString().ToUpper().Equals("Y") || dataRows[0]["IsPrimary"].ToString().ToUpper().Equals("Y");
                 switch (dataColumn.DataType)
                 {
 					case Type _ when dataColumn.DataType == typeof(string):
