@@ -133,7 +133,7 @@ else
                     }
                     else
                     {
-                        <RadzenDataGridColumn TItem="ExpandoObject" Title="@col.Caption" Width="@GetColumnWidth(col)" Property="@colName" Type="col.DataType" Visible="@IsColumnVisible(col)">
+                        <RadzenDataGridColumn TItem="ExpandoObject" Title="@col.Caption" Width="@GetColumnWidth(col)" Property="@colName" Type="col.DataType" Visible="@IsColumnVisible(col)" Filterable="col.DataType == typeof(string)">
                             <Template Context="row"> 
                                 @{
                                     var dict = (IDictionary<string, object>)row;
