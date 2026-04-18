@@ -64,6 +64,7 @@ else
                         AllowSorting="true" AllowMultiColumnSorting="true" ShowMultiColumnSortingIndex="true"
                         AllowFiltering="true" FilterMode="FilterMode.Simple" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" LogicalFilterOperator="LogicalFilterOperator.Or"
                         SelectionMode="DataGridSelectionMode.Single" @bind-Value=@_selectedRows1
+                        EditMode="DataGridEditMode.Single"
                         LoadData="@OnLoadData"
                         Style="max-height: 1070px; width: 100%; overflow-y: auto;"
                         class="rz-datagrid-scrollable-table">
@@ -146,23 +147,32 @@ else
                             <EditTemplate Context="row">
                                 @{
                                     var dict = (IDictionary<string, object>)row;
+                                    string TId = dict.ContainsKey("TId") && dict["TId"] != DBNull.Value ? dict["TId"].ToString() : string.Empty;
                                     string state = dict.ContainsKey("_rowState") && dict["_rowState"] != DBNull.Value ? dict["_rowState"].ToString() : string.Empty;
                                     string colValue = dict.ContainsKey(colName) && dict[colName] != DBNull.Value ? dict[colName].ToString() : string.Empty;
+									string strComponentName = $"{colName}_{TId}";
 
                                     @if (col.ReadOnly || (state != "Insert" && IsColumnPrimary(col)))
                                         @GetColumnFormatValue(col, colValue)
                                     else
                                     {
-                                        <RadzenTextBox Value="@colValue"
-                                                       Change="@(args => OnUpdateDataValue(row, colName, args))"
-                                                       Style="width:100%;" 
-                                        />
+                                        <RadzenTextBox Name="@strComponentName" Value="@colValue" Change="@(v => OnUpdateDataValue(colName, row, v))" Style="width:100%;" />
+                                        <RadzenCustomValidator Component="@strComponentName" Validator="@(() => CustomValidate(col, row))" Text="필수입력 입니다." Popup="true" />
                                     }
                                 }
                             </EditTemplate>
                         </RadzenDataGridColumn>
                     }
                 }
+
+                <RadzenDataGridColumn TItem="ExpandoObject" Context="row" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="50px" Frozen="true" FrozenPosition="FrozenColumnPosition.Right">
+                    <Template>
+                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1" Click="@(args => EditRow(row))" @onclick:stopPropagation="true" />
+                    </Template>
+                    <EditTemplate>
+                        <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@((args) => OnUpdateRow(row))" />
+                    </EditTemplate>
+                </RadzenDataGridColumn>
             </Columns>
         </RadzenDataGrid>
     </RadzenStack>
@@ -220,19 +230,7 @@ else
     {
         if (firstRender)
         {
-            await SetEditMode(grid1);
-        }
-    }
-
-    private async Task SetEditMode(RadzenDataGrid<ExpandoObject> grid)
-    {
-        if (grid != null && grid.IsValid)
-        { 
-            foreach (ExpandoObject row in _tableRows1)
-            {
-                if (!grid.IsRowInEditMode(row))
-                    await grid.EditRow(row);
-            }
+            // await SetEditMode(grid1);
         }
     }
 
@@ -277,19 +275,30 @@ else
 
     private string GetColumnFormatValue(DataColumn dataColumn, string strValue)
     {
-		string strFormatValue = strValue;
+        string strFormatValue = strValue;
 
         if (dataColumn != null)
         {
             if (dataColumn.ExtendedProperties.ContainsKey("DataFormat"))
             {
-				string strDataFormat = dataColumn.ExtendedProperties["DataFormat"].ToString();
-				if (!string.IsNullOrEmpty(strDataFormat))
+                string strDataFormat = dataColumn.ExtendedProperties["DataFormat"].ToString();
+                if (!string.IsNullOrEmpty(strDataFormat))
                     strFormatValue = string.Format(strDataFormat, strValue);
             }
         }
 
         return strFormatValue;
+    }
+
+    private async Task SetEditMode(RadzenDataGrid<ExpandoObject> grid)
+    {
+        if (grid != null && grid.IsValid)
+        {
+            foreach (ExpandoObject row in _tableRows1)
+            {
+                await EditRow(row);
+            }
+        }
     }
 
     private async Task OnGetContents()
@@ -312,7 +321,7 @@ else
             _selectedRows1 = _tableRows1.Take(1).ToList();
             _allRows1 = _tableRows1.ToList();
 
-            await SetEditMode(grid1);
+            // await SetEditMode(grid1);
 
             StateHasChanged();
         }
@@ -327,6 +336,8 @@ else
     {
         try
         {
+            if (grid1 == null || !grid1.IsValid) return;
+
             string jsonDataTable = string.Empty;
             if (_tableRows1 != null && _tableRows1.Count() > 0)
             {
@@ -358,20 +369,20 @@ else
         }
     }
 
-    private async Task OnUpdateDataValue(ExpandoObject row, string colName, object newValue)
+    private async Task OnUpdateDataValue(string colName, ExpandoObject row, object newValue)
     {
         if (row == null) return;
 
         var dict = (IDictionary<string, object>)row;
         dict[colName] = newValue;
 
-        await OnUpdateRow(row);
-        await grid1.EditRow(row);
+        // await OnUpdateRow(row);
+        // await EditRow(row);
     }
 
     private async Task OnUpdateRow(ExpandoObject row)
     {
-        if (!grid1.IsValid) return;
+        if (grid1 == null || !grid1.IsValid) return;
 
         var dict = (IDictionary<string, object>)row;
 
@@ -381,11 +392,29 @@ else
         await grid1.UpdateRow(row);
     }
 
+    private bool CustomValidate(DataColumn col, ExpandoObject row)
+    {
+		if (col == null || row == null) return true;
+		if (col.AllowDBNull) return true;
+
+        var dict = (IDictionary<string, object>)row;
+        object value = dict.ContainsKey(col.ColumnName) ? dict[col.ColumnName] : null;
+
+        if (col.DataType == typeof(string))
+			return !string.IsNullOrEmpty(value?.ToString());
+        else if (col.DataType == typeof(int) || col.DataType == typeof(long) || col.DataType == typeof(decimal) || col.DataType == typeof(double) || col.DataType == typeof(float))
+            return value != null && !value.Equals(0);
+        else if (col.DataType == typeof(DateTime))
+            return value != null && !value.Equals(DateTime.MinValue);
+
+		return true;
+    }
+
     private async Task InsertRow()
     {
         if (PageState.User == null) return;
 
-        if (!grid1.IsValid) return;
+        if (grid1 == null || !grid1.IsValid) return;
 
         DataRow newRow = _dataTable.NewRow();
         newRow["_rowState"] = "Insert";
@@ -405,7 +434,7 @@ else
                 else if (col.DataType == typeof(int) || col.DataType == typeof(long) || col.DataType == typeof(decimal) || col.DataType == typeof(double) || col.DataType == typeof(float))
                     newRow[col.ColumnName] = 0;
                 else if (col.DataType == typeof(DateTime))
-                    newRow[col.ColumnName] = DateTime.Now;
+                    newRow[col.ColumnName] = null;
                 else if (col.DataType == typeof(bool))
                     newRow[col.ColumnName] = false;
                 else if (col.DataType.IsValueType)
@@ -432,9 +461,27 @@ else
         StateHasChanged();
     }
 
+    private async Task EditRow()
+    {
+        if (grid1 == null || !grid1.IsValid) return;
+
+        foreach (ExpandoObject row in _selectedRows1)
+        {
+            await EditRow(row);
+        }
+    }
+
+    private async Task EditRow(ExpandoObject row)
+    {
+        if (grid1 == null || !grid1.IsValid || row == null) return;
+
+        if (!grid1.IsRowInEditMode(row))
+		    await grid1.EditRow(row);
+    }
+
     private async Task CancelRow()
     {
-        if (!grid1.IsValid) return;
+        if (grid1 == null || !grid1.IsValid) return;
 
         foreach (ExpandoObject row in _selectedRows1)
         {
@@ -444,7 +491,7 @@ else
 
     private async Task CancelRow(ExpandoObject row)
     {
-        if (!grid1.IsValid) return;
+        if (grid1 == null || !grid1.IsValid || row == null) return;
 
         var dict = (IDictionary<string, object>)row;
         string state = dict.ContainsKey("_rowState") && dict["_rowState"] != DBNull.Value ? dict["_rowState"].ToString() : string.Empty;
@@ -482,14 +529,14 @@ else
                     }
                 }
 
-                await grid1.EditRow(row);
+                // await EditRow(row);
             }
         }
     }
 
     private async Task DeleteRow()
     {
-        if (!grid1.IsValid) return;
+        if (grid1 == null || !grid1.IsValid) return;
 
         foreach (ExpandoObject row in _selectedRows1)
         {
@@ -499,7 +546,7 @@ else
 
     private async Task DeleteRow(ExpandoObject row)
     {
-        if (!grid1.IsValid) return;
+        if (grid1 == null || !grid1.IsValid || row == null) return;
 
         var dict = (IDictionary<string, object>)row;
         string state = dict.ContainsKey("_rowState") && dict["_rowState"] != DBNull.Value ? dict["_rowState"].ToString() : string.Empty;
