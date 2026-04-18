@@ -12,7 +12,7 @@
 @inject ITemplate00Service ClientTemplate00Service
 @inject NavigationManager NavigationManager
 @inject IStringLocalizer<Index> Localizer
-@rendermode Microsoft.AspNetCore.Components.Web.RenderMode.InteractiveServer
+@inject Radzen.NotificationService radzenNotificationService
 
 <style>
     /* 1. 그리드 내부 테이블이 화면보다 커지더라도 압축되지 않도록 설정 */
@@ -31,6 +31,17 @@
     .rz-datagrid-table-wrapper {
         overflow-x: auto !important;
     }
+
+    .no-border {
+        border: none;
+    }
+    .required-border {
+        border: 2px solid orange;
+    }
+    .inValid-border {
+        border: 5px solid red;
+    }
+
 </style>
 
 @if (_isLoading)
@@ -156,8 +167,9 @@ else
                                         @GetColumnFormatValue(col, colValue)
                                     else
                                     {
-                                        <RadzenTextBox Name="@strComponentName" Value="@colValue" Change="@(v => OnUpdateDataValue(colName, row, v))" Style="width:100%;" />
-                                        <RadzenCustomValidator Component="@strComponentName" Validator="@(() => CustomValidate(col, row))" Text="필수입력 입니다." Popup="true" />
+                                        <div class="@GetBorderClass(col, row)">
+                                        <RadzenTextBox Name="@strComponentName" Value="@colValue" Change="@(v => OnUpdateDataValue(col, row, v))" Style="width:100%;" />
+                                        </div>
                                     }
                                 }
                             </EditTemplate>
@@ -165,7 +177,7 @@ else
                     }
                 }
 
-                <RadzenDataGridColumn TItem="ExpandoObject" Context="row" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="50px" Frozen="true" FrozenPosition="FrozenColumnPosition.Right">
+                <RadzenDataGridColumn TItem="ExpandoObject" Context="row" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="20px" Frozen="true" FrozenPosition="FrozenColumnPosition.Right">
                     <Template>
                         <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1" Click="@(args => EditRow(row))" @onclick:stopPropagation="true" />
                     </Template>
@@ -232,6 +244,17 @@ else
         {
             // await SetEditMode(grid1);
         }
+    }
+
+    private string GetBorderClass(DataColumn dataColumn, ExpandoObject row)
+    {
+        if (dataColumn == null || row == null) return string.Empty;
+
+        if (dataColumn.AllowDBNull) return "no-border";
+
+        bool isValid = CustomValidateRow(dataColumn, row);
+
+        return isValid ? "required-border" : "inValid-border";
     }
 
     private bool IsColumnPrimary(DataColumn dataColumn)
@@ -311,9 +334,9 @@ else
             _tableRows1 = _dataTable.AsEnumerable().Select(row =>
             {
                 var obj = new ExpandoObject() as IDictionary<string, object>;
-                foreach (DataColumn col in _dataTable.Columns)
+                foreach (DataColumn dataColumn in _dataTable.Columns)
                 {
-                    obj.Add(col.ColumnName, row[col]);
+                    obj.Add(dataColumn.ColumnName, row[dataColumn]);
                 }
                 return (ExpandoObject)obj;
             }).ToList();
@@ -322,6 +345,15 @@ else
             _allRows1 = _tableRows1.ToList();
 
             // await SetEditMode(grid1);
+
+            NotificationMessage message = new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "조회 완료",
+                Detail = $"조회가 완료 되었습니다..",
+                Duration = 3000
+            };
+            radzenNotificationService.Notify(message);
 
             StateHasChanged();
         }
@@ -341,11 +373,39 @@ else
             string jsonDataTable = string.Empty;
             if (_tableRows1 != null && _tableRows1.Count() > 0)
             {
+                foreach (ExpandoObject row in _tableRows1)
+                {
+                    if (grid1.IsRowInEditMode(row))
+                    {
+                        bool isValid = true;
+                        foreach (DataColumn dataColumn in _dataTable.Columns)
+                        {
+                            if (ignoreList.Contains(dataColumn.ColumnName) || byList.Contains(dataColumn.ColumnName) || onList.Contains(dataColumn.ColumnName)) continue;
+
+                            isValid = CustomValidateRow(dataColumn, row);
+
+                            if (!isValid)
+                                break;
+                        }
+
+                        if (!isValid) return;
+                    }
+                }
+
                 var jsonList = _tableRows1.Where(row => !string.IsNullOrEmpty(((IDictionary<string, object>)row)["_rowState"]?.ToString())).ToList();
                 jsonDataTable = JsonSerializer.Serialize(jsonList);
             }
 
             await ClientTemplate00Service.ExecuteQueryIDAsync(ModuleState.ModuleId, "", jsonDataTable);
+
+            NotificationMessage message = new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "저장 완료",
+                Detail = $"저장이 완료 되었습니다..",
+                Duration = 3000
+            };
+            radzenNotificationService.Notify(message);
 
             await OnGetContents();
         }
@@ -369,13 +429,49 @@ else
         }
     }
 
-    private async Task OnUpdateDataValue(string colName, ExpandoObject row, object newValue)
+    private bool CustomValidateRow(DataColumn dataColumn, ExpandoObject row)
+    {
+        if (dataColumn == null || row == null) return false;
+        if (dataColumn.AllowDBNull) return true;
+
+        bool isValid = true;
+
+        var dict = (IDictionary<string, object>)row;
+        object value = dict.ContainsKey(dataColumn.ColumnName) ? dict[dataColumn.ColumnName] : null;
+
+        if (dataColumn.DataType == typeof(string))
+            isValid = !string.IsNullOrEmpty(value?.ToString());
+        else if (dataColumn.DataType == typeof(int) || dataColumn.DataType == typeof(long) || dataColumn.DataType == typeof(decimal) || dataColumn.DataType == typeof(double) || dataColumn.DataType == typeof(float))
+            isValid = value != null && !value.Equals(0);
+        else if (dataColumn.DataType == typeof(DateTime))
+            isValid = value != null && !value.Equals(DateTime.MinValue);
+
+        if (!isValid)
+        {
+            NotificationMessage message = new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "필수입력",
+                    Detail = $"{dataColumn.Caption} 은/는 필수 입력 항목입니다.",
+                    Duration = 3000
+                };
+            radzenNotificationService.Notify(message);
+        }
+    
+        return isValid;
+    }
+
+    private async Task OnUpdateDataValue(DataColumn dataColumn, ExpandoObject row, object newValue)
     {
         if (row == null) return;
 
         var dict = (IDictionary<string, object>)row;
-        dict[colName] = newValue;
+        dict[dataColumn.ColumnName] = newValue;
 
+        if (dict["_rowState"].ToString() != "Insert")
+            dict["_rowState"] = "Update";
+
+        StateHasChanged();
         // await OnUpdateRow(row);
         // await EditRow(row);
     }
@@ -384,30 +480,20 @@ else
     {
         if (grid1 == null || !grid1.IsValid) return;
 
-        var dict = (IDictionary<string, object>)row;
+        bool isValid = true;
 
-        if (dict["_rowState"].ToString() != "Insert")
-            dict["_rowState"] = "Update";
+        foreach (DataColumn dataColumn in _dataTable.Columns)
+        {
+            if (ignoreList.Contains(dataColumn.ColumnName) || byList.Contains(dataColumn.ColumnName) || onList.Contains(dataColumn.ColumnName)) continue;
 
-        await grid1.UpdateRow(row);
-    }
+            isValid = CustomValidateRow(dataColumn, row);
 
-    private bool CustomValidate(DataColumn col, ExpandoObject row)
-    {
-		if (col == null || row == null) return true;
-		if (col.AllowDBNull) return true;
+            if (!isValid)
+                break;
+        }
 
-        var dict = (IDictionary<string, object>)row;
-        object value = dict.ContainsKey(col.ColumnName) ? dict[col.ColumnName] : null;
-
-        if (col.DataType == typeof(string))
-			return !string.IsNullOrEmpty(value?.ToString());
-        else if (col.DataType == typeof(int) || col.DataType == typeof(long) || col.DataType == typeof(decimal) || col.DataType == typeof(double) || col.DataType == typeof(float))
-            return value != null && !value.Equals(0);
-        else if (col.DataType == typeof(DateTime))
-            return value != null && !value.Equals(DateTime.MinValue);
-
-		return true;
+        if (isValid)
+            await grid1.UpdateRow(row);
     }
 
     private async Task InsertRow()
@@ -419,35 +505,35 @@ else
         DataRow newRow = _dataTable.NewRow();
         newRow["_rowState"] = "Insert";
 
-        foreach (DataColumn col in _dataTable.Columns)
+        foreach (DataColumn dataColumn in _dataTable.Columns)
         {
-            if (ignoreList.Contains(col.ColumnName)) continue;
+            if (ignoreList.Contains(dataColumn.ColumnName)) continue;
 
-            if (byList.Contains(col.ColumnName))
-                newRow[col.ColumnName] = PageState.User.Username;
-            else if (onList.Contains(col.ColumnName))
-                newRow[col.ColumnName] = DateTime.Now;
-            else if (!col.AllowDBNull && newRow[col.ColumnName] == null)
+            if (byList.Contains(dataColumn.ColumnName))
+                newRow[dataColumn.ColumnName] = PageState.User.Username;
+            else if (onList.Contains(dataColumn.ColumnName))
+                newRow[dataColumn.ColumnName] = DateTime.Now;
+            else if (!dataColumn.AllowDBNull && newRow[dataColumn.ColumnName] == null)
             {
-                if (col.DataType == typeof(string))
-                    newRow[col.ColumnName] = string.Empty;
-                else if (col.DataType == typeof(int) || col.DataType == typeof(long) || col.DataType == typeof(decimal) || col.DataType == typeof(double) || col.DataType == typeof(float))
-                    newRow[col.ColumnName] = 0;
-                else if (col.DataType == typeof(DateTime))
-                    newRow[col.ColumnName] = null;
-                else if (col.DataType == typeof(bool))
-                    newRow[col.ColumnName] = false;
-                else if (col.DataType.IsValueType)
-                    newRow[col.ColumnName] = Activator.CreateInstance(col.DataType);
+                if (dataColumn.DataType == typeof(string))
+                    newRow[dataColumn.ColumnName] = string.Empty;
+                else if (dataColumn.DataType == typeof(int) || dataColumn.DataType == typeof(long) || dataColumn.DataType == typeof(decimal) || dataColumn.DataType == typeof(double) || dataColumn.DataType == typeof(float))
+                    newRow[dataColumn.ColumnName] = 0;
+                else if (dataColumn.DataType == typeof(DateTime))
+                    newRow[dataColumn.ColumnName] = null;
+                else if (dataColumn.DataType == typeof(bool))
+                    newRow[dataColumn.ColumnName] = false;
+                else if (dataColumn.DataType.IsValueType)
+                    newRow[dataColumn.ColumnName] = Activator.CreateInstance(dataColumn.DataType);
             }
         }
 
         // _dataTable.Rows.InsertAt(newRow, 0);
 
         var expando = new ExpandoObject() as IDictionary<string, object>;
-        foreach (DataColumn col in newRow.Table.Columns)
+        foreach (DataColumn dataColumn in newRow.Table.Columns)
         {
-            expando[col.ColumnName] = newRow[col];
+            expando[dataColumn.ColumnName] = newRow[dataColumn];
         }
 
         _tableRows1.Insert(0, (ExpandoObject)expando);
@@ -519,13 +605,11 @@ else
 
                 if (dataRow.HasVersion(DataRowVersion.Original))
                 {
-                    foreach (DataColumn col in _dataTable.Columns)
+                    foreach (DataColumn dataColumn in _dataTable.Columns)
                     {
-                        if (ignoreList.Contains(col.ColumnName)) continue;
-                        if (byList.Contains(col.ColumnName)) continue;
-                        if (onList.Contains(col.ColumnName)) continue;
+                        if (ignoreList.Contains(dataColumn.ColumnName) || byList.Contains(dataColumn.ColumnName) || onList.Contains(dataColumn.ColumnName)) continue;
 
-                        dict[col.ColumnName] = dataRow[col.ColumnName, DataRowVersion.Original];
+                        dict[dataColumn.ColumnName] = dataRow[dataColumn.ColumnName, DataRowVersion.Original];
                     }
                 }
 
