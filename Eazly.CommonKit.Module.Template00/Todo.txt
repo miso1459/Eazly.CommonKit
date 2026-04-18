@@ -20,6 +20,12 @@
 
 
 * 템플릿: Template00를 복사해서 클라이언트만 수정해서 사용하는 방법 찾기
- - Template00 = Single
- - Template01 = Master-Detail
+ - Template00 = Core
+ 
+ * 조회는 공용 사용
+ - TemplateR00 = 조회기본
+
+ * 등록은 복사하고 DTO 생성해서 사용
+ - TemplateC00 = 등록기본
+
  - 그외는 복사해서 사용, Service는 공통 사용
