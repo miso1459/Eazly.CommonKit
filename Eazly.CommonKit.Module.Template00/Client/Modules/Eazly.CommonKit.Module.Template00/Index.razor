@@ -4,6 +4,7 @@
 
 @using Eazly.CommonKit.Module.Template00.Services
 @using Eazly.CommonKit.Module.Template00.Models
+@using Eazly.CommonKit.Module.Template00.Shared.UI
 @using System.Threading.Tasks
 @using System.Dynamic
 
@@ -58,37 +59,39 @@ else
         <RadzenStack Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Left" AlignItems="AlignItems.Start" Gap="0.5rem" >
             <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Left" AlignItems="AlignItems.Center" Gap="1rem" >
                 <RadzenLabel Text="조회기간" />
-                <RadzenDatePicker @bind-Value=@_Condition.DateFrom DateFormat="yyyy-MM-dd" />
+                <RadzenDatePicker @bind-Value=@_sharedTemplate00UI._Condition.DateFrom DateFormat="yyyy-MM-dd" />
                     <RadzenLabel Text="~" />
-                <RadzenDatePicker @bind-Value=@_Condition.DateTo DateFormat="yyyy-MM-dd" />
+                <RadzenDatePicker @bind-Value=@_sharedTemplate00UI._Condition.DateTo DateFormat="yyyy-MM-dd" />
             </RadzenStack>
 
             <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Left" AlignItems="AlignItems.Center" Gap="1rem">
                 <RadzenLabel Text="검색조건" />
-                <RadzenTextBox @bind-Value=@_Condition.SearchValue Placeholder="" Style="width: 505px" />
+                <RadzenTextBox @bind-Value=@_sharedTemplate00UI._Condition.SearchValue Placeholder="" Style="width: 505px" />
             </RadzenStack>
         </RadzenStack>
     </RadzenCard>
     
     <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Left" AlignItems="AlignItems.Normal" Gap="1rem">
-        <RadzenDataGrid @ref="grid1" Data="@_tableRows1" TItem="ExpandoObject" AllowColumnResize="true"
+        <RadzenDataGrid @ref="_sharedTemplate00UI._grid" Data="@_sharedTemplate00UI._tableRows" TItem="ExpandoObject" GridLines="DataGridGridLines.Both"
+        AllowColumnResize="true"
                         AllowSorting="true" AllowMultiColumnSorting="true" ShowMultiColumnSortingIndex="true"
                         AllowFiltering="true" FilterMode="FilterMode.Simple" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" LogicalFilterOperator="LogicalFilterOperator.Or"
-                        SelectionMode="DataGridSelectionMode.Single" @bind-Value=@_selectedRows1
+                        SelectionMode="DataGridSelectionMode.Single" @bind-Value=@_sharedTemplate00UI.SelectedRows
                         EditMode="DataGridEditMode.Single"
-                        LoadData="@OnLoadData"
+                        LoadData="@_sharedTemplate00UI.OnLoadData"
                         Style="max-height: 1070px; width: 100%; overflow-y: auto;"
                         class="rz-datagrid-scrollable-table">
             <HeaderTemplate>
                 <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Left" AlignItems="AlignItems.Normal" Gap="1rem">
                     <RadzenLabel Text=" " />
-                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Primary" Click="@OnGetContents" Text=@Localizer["Query"] />
-                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Primary" Click="@OnSave" Text=@Localizer["Save"] Disabled="@_ContentsConifg.IsDisSave" />
-                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Success" Icon="add_circle" Text=@Localizer["NewRow"] Click="@InsertRow" Disabled="@_ContentsConifg.IsDisCreate" />
-                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Warning" Icon="refresh" Text=@Localizer["CancelRow"] Click="@(args => CancelRow())" Disabled="@_ContentsConifg.IsDisSave" />
-                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Danger" Icon="delete" Text=@Localizer["DeleteRow"] Click="@(args => DeleteRow())" Disabled="@_ContentsConifg.IsDisDelete" />
-                    
-                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Info" Text="Export XLS" Icon="grid_on" Click="@(args => Export("excel", "grid1"))" Disabled="@_ContentsConifg.IsDisExport" />
+                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Primary" Icon="Search" Click="@OnGetContents" Text=@Localizer["Query"] />
+                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Primary" Icon="Save" Click="@OnSave" Text=@Localizer["Save"] Disabled="@_sharedTemplate00UI._ContentsConifg.IsDisSave" />
+                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Success" Icon="Add" Text=@Localizer["NewRow"] Click="@InsertRow" Disabled="@_sharedTemplate00UI._ContentsConifg.IsDisCreate" />
+                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Success" Icon="Edit" Text=@Localizer["EditRow"] Click="@_sharedTemplate00UI.EditRow" Disabled="@_sharedTemplate00UI._ContentsConifg.IsDisUpdate" />
+                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Success" Icon="check" Text=@Localizer["ApplyRow"] Click="@_sharedTemplate00UI.UpdateRow" Disabled="@_sharedTemplate00UI._ContentsConifg.IsDisUpdate" />
+                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Warning" Icon="Refresh" Text=@Localizer["CancelRow"] Click="@(args => _sharedTemplate00UI.CancelRow())" Disabled="@_sharedTemplate00UI._ContentsConifg.IsDisSave" />
+                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Danger" Icon="Delete" Text=@Localizer["DeleteRow"] Click="@(args => _sharedTemplate00UI.DeleteRow())" Disabled="@_sharedTemplate00UI._ContentsConifg.IsDisDelete" />
+                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Info" Icon="grid_on" Text="@Localizer["ExportExcel"]" Click="@(args => Export("excel", "grid1"))" Disabled="@_sharedTemplate00UI._ContentsConifg.IsDisExport" />
                 </RadzenStack>
             </HeaderTemplate>
             <Columns>
@@ -113,13 +116,13 @@ else
                     </Template>
                 </RadzenDataGridColumn>
 
-                @foreach (DataColumn col in _dataTable.Columns)
+                @foreach (DataColumn col in _sharedTemplate00UI._dataTable.Columns)
                 {
-                    @if (ignoreList.Contains(col.ColumnName)) continue;
+                    @if (_sharedTemplate00UI.ignoreList.Contains(col.ColumnName)) continue;
 
                     var colName = col.ColumnName;
 
-                    @if (byList.Contains(colName))
+                    @if (_sharedTemplate00UI.byList.Contains(colName))
                     {
                         <RadzenDataGridColumn TItem="ExpandoObject" Title="@colName" Width="100px" MinWidth="100px" Property="@colName" Type="col.DataType">
                             <Template Context="row">
@@ -131,7 +134,7 @@ else
                             </Template>
                         </RadzenDataGridColumn>
                     }
-                    else if (onList.Contains(colName))
+                    else if (_sharedTemplate00UI.onList.Contains(colName))
                     {
                         <RadzenDataGridColumn TItem="ExpandoObject" Title="@colName" Width="200px" MinWidth="200px" MaxWidth="200px" Property="@colName" Type="col.DataType" Filterable="false">
                             <Template Context="row">
@@ -145,14 +148,14 @@ else
                     }
                     else
                     {
-                        <RadzenDataGridColumn TItem="ExpandoObject" Title="@col.Caption" Width="@GetColumnWidth(col)" Property="@colName" Type="col.DataType" Visible="@IsColumnVisible(col)" Filterable="col.DataType == typeof(string)">
+                        <RadzenDataGridColumn TItem="ExpandoObject" Title="@col.Caption" Width="@_sharedTemplate00UI.GetColumnWidth(col)" Property="@colName" Type="col.DataType" Visible="@_sharedTemplate00UI.IsColumnVisible(col)" Filterable="col.DataType == typeof(string)">
                             <Template Context="row"> 
                                 @{
                                     var dict = (IDictionary<string, object>)row;
                                     string colValue = dict.ContainsKey(colName) && dict[colName] != DBNull.Value ? dict[colName].ToString() : string.Empty;
                                 }
 
-                                @GetColumnFormatValue(col, colValue)
+                                @_sharedTemplate00UI.GetColumnFormatValue(col, colValue)
                             </Template>
 
                             <EditTemplate Context="row">
@@ -163,12 +166,12 @@ else
                                     string colValue = dict.ContainsKey(colName) && dict[colName] != DBNull.Value ? dict[colName].ToString() : string.Empty;
 									string strComponentName = $"{colName}_{TId}";
 
-                                    @if (col.ReadOnly || (state != "Insert" && IsColumnPrimary(col)))
-                                        @GetColumnFormatValue(col, colValue)
+                                    @if (col.ReadOnly || (state != "Insert" && _sharedTemplate00UI.IsColumnPrimary(col)))
+                                        @_sharedTemplate00UI.GetColumnFormatValue(col, colValue)
                                     else
                                     {
-                                        <div class="@GetBorderClass(col, row)">
-                                        <RadzenTextBox Name="@strComponentName" Value="@colValue" Change="@(v => OnUpdateDataValue(col, row, v))" Style="width:100%;" />
+                                        <div class="@_sharedTemplate00UI.GetBorderClass(col, row)">
+                                        <RadzenTextBox Name="@strComponentName" Value="@colValue" Change="@(v => _sharedTemplate00UI.OnUpdateDataValue(col, row, v))" Style="width:100%;" />
                                         </div>
                                     }
                                 }
@@ -177,14 +180,6 @@ else
                     }
                 }
 
-                <RadzenDataGridColumn TItem="ExpandoObject" Context="row" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="20px" Frozen="true" FrozenPosition="FrozenColumnPosition.Right">
-                    <Template>
-                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1" Click="@(args => EditRow(row))" @onclick:stopPropagation="true" />
-                    </Template>
-                    <EditTemplate>
-                        <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@((args) => OnUpdateRow(row))" />
-                    </EditTemplate>
-                </RadzenDataGridColumn>
             </Columns>
         </RadzenDataGrid>
     </RadzenStack>
@@ -205,27 +200,15 @@ else
 
     private bool _isLoading = true;
 
-    private Models.Contition _Condition;
-
-    private Models.ContentsConifg _ContentsConifg;
-    private DataTable _dataTable;
-    private IList<ExpandoObject> _tableRows1 = new List<ExpandoObject>();
-    private IList<ExpandoObject> _selectedRows1;
-    private IList<ExpandoObject> _allRows1 = new List<ExpandoObject>();
-
-    private RadzenDataGrid<ExpandoObject> grid1;
-
-    private string[] ignoreList = { "TId", "_rowState", "TenantId", "SiteId" };
-    private string[] byList = { "CreatedBy", "ModifiedBy" };
-    private string[] onList = { "CreatedOn", "ModifiedOn" };
+    private Template00UI _sharedTemplate00UI;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            _Condition = await ClientTemplate00Service.GetConditionAsync(ModuleState.ModuleId);
-
-            _ContentsConifg = await ClientTemplate00Service.GetConfigContentsAsync(ModuleState.ModuleId, "");
+            _sharedTemplate00UI = new Template00UI(PageState.User?.Username, radzenNotificationService);
+            _sharedTemplate00UI._Condition = await ClientTemplate00Service.GetConditionAsync(ModuleState.ModuleId);
+            _sharedTemplate00UI._ContentsConifg = await ClientTemplate00Service.GetConfigContentsAsync(ModuleState.ModuleId, "");
 
             await OnGetContents();
 
@@ -242,85 +225,7 @@ else
     {
         if (firstRender)
         {
-            // await SetEditMode(grid1);
-        }
-    }
 
-    private string GetBorderClass(DataColumn dataColumn, ExpandoObject row)
-    {
-        if (dataColumn == null || row == null) return string.Empty;
-
-        if (dataColumn.AllowDBNull) return "no-border";
-
-        bool isValid = CustomValidateRow(dataColumn, row);
-
-        return isValid ? "required-border" : "inValid-border";
-    }
-
-    private bool IsColumnPrimary(DataColumn dataColumn)
-    {
-        bool isPrimary = false;
-
-        if (dataColumn != null)
-        {
-            if (dataColumn.ExtendedProperties.ContainsKey("IsPrimary"))
-                isPrimary = dataColumn.ExtendedProperties["IsPrimary"]?.ToString().ToUpper() == "Y";
-        }
-
-        return isPrimary;
-    }
-
-    private bool IsColumnVisible(DataColumn dataColumn)
-    {
-        bool isVisible = false;
-
-        if (dataColumn != null)
-        {
-            if (dataColumn.ExtendedProperties.ContainsKey("IsVisible"))
-                isVisible = dataColumn.ExtendedProperties["IsVisible"]?.ToString().ToUpper() == "Y";
-        }
-
-        return isVisible;
-    }
-
-    private string GetColumnWidth(DataColumn dataColumn)
-    {
-        int iWidth = 100;
-
-        if (dataColumn != null)
-        {
-            if (dataColumn.ExtendedProperties.ContainsKey("Width"))
-                iWidth = Convert.ToInt32(dataColumn.ExtendedProperties["Width"]);
-        }
-
-        return iWidth.ToString()+"px";
-    }
-
-    private string GetColumnFormatValue(DataColumn dataColumn, string strValue)
-    {
-        string strFormatValue = strValue;
-
-        if (dataColumn != null)
-        {
-            if (dataColumn.ExtendedProperties.ContainsKey("DataFormat"))
-            {
-                string strDataFormat = dataColumn.ExtendedProperties["DataFormat"].ToString();
-                if (!string.IsNullOrEmpty(strDataFormat))
-                    strFormatValue = string.Format(strDataFormat, strValue);
-            }
-        }
-
-        return strFormatValue;
-    }
-
-    private async Task SetEditMode(RadzenDataGrid<ExpandoObject> grid)
-    {
-        if (grid != null && grid.IsValid)
-        {
-            foreach (ExpandoObject row in _tableRows1)
-            {
-                await EditRow(row);
-            }
         }
     }
 
@@ -328,23 +233,20 @@ else
     {
         try
         {
-            string jsonCondition = JsonSerializer.Serialize(_Condition);
-            _dataTable = await ClientTemplate00Service.GetContentsIDAsync(ModuleState.ModuleId, "", jsonCondition);
+            string jsonCondition = JsonSerializer.Serialize(_sharedTemplate00UI._Condition);
+            _sharedTemplate00UI._dataTable = await ClientTemplate00Service.GetContentsIDAsync(ModuleState.ModuleId, "", jsonCondition);
 
-            _tableRows1 = _dataTable.AsEnumerable().Select(row =>
+            _sharedTemplate00UI._tableRows = _sharedTemplate00UI._dataTable.AsEnumerable().Select(row =>
             {
                 var obj = new ExpandoObject() as IDictionary<string, object>;
-                foreach (DataColumn dataColumn in _dataTable.Columns)
+                foreach (DataColumn dataColumn in _sharedTemplate00UI._dataTable.Columns)
                 {
                     obj.Add(dataColumn.ColumnName, row[dataColumn]);
                 }
                 return (ExpandoObject)obj;
             }).ToList();
 
-            _selectedRows1 = _tableRows1.Take(1).ToList();
-            _allRows1 = _tableRows1.ToList();
-
-            // await SetEditMode(grid1);
+            _sharedTemplate00UI.SetSelectedRows(_sharedTemplate00UI._tableRows.Take(1).ToList());
 
             NotificationMessage message = new NotificationMessage
             {
@@ -364,41 +266,39 @@ else
         }
     }
 
+    public async Task InsertRow()
+    {
+        await _sharedTemplate00UI.InsertRow();
+
+        // StateHasChanged();
+    }
+
     private async Task OnSave()
     {
         try
         {
-            if (grid1 == null || !grid1.IsValid) return;
+            NotificationMessage message;
 
-            string jsonDataTable = string.Empty;
-            if (_tableRows1 != null && _tableRows1.Count() > 0)
+            await _sharedTemplate00UI.UpdateRow();
+
+            string jsonDataTable = _sharedTemplate00UI.GetJsonDataTable();
+
+            if (string.IsNullOrEmpty(jsonDataTable))
             {
-                foreach (ExpandoObject row in _tableRows1)
+                message = new NotificationMessage
                 {
-                    if (grid1.IsRowInEditMode(row))
-                    {
-                        bool isValid = true;
-                        foreach (DataColumn dataColumn in _dataTable.Columns)
-                        {
-                            if (ignoreList.Contains(dataColumn.ColumnName) || byList.Contains(dataColumn.ColumnName) || onList.Contains(dataColumn.ColumnName)) continue;
+                    Severity = NotificationSeverity.Info,
+                    Summary = "저장할 데이터 없음",
+                    Detail = $"저장할 데이터가 없습니다..",
+                    Duration = 3000
+                };
+                radzenNotificationService.Notify(message);
+                return;
+			}
 
-                            isValid = CustomValidateRow(dataColumn, row);
+            await ClientTemplate00Service.ExecuteQueryIDAsync(ModuleState.ModuleId, "Save", jsonDataTable);
 
-                            if (!isValid)
-                                break;
-                        }
-
-                        if (!isValid) return;
-                    }
-                }
-
-                var jsonList = _tableRows1.Where(row => !string.IsNullOrEmpty(((IDictionary<string, object>)row)["_rowState"]?.ToString())).ToList();
-                jsonDataTable = JsonSerializer.Serialize(jsonList);
-            }
-
-            await ClientTemplate00Service.ExecuteQueryIDAsync(ModuleState.ModuleId, "", jsonDataTable);
-
-            NotificationMessage message = new NotificationMessage
+            message = new NotificationMessage
             {
                 Severity = NotificationSeverity.Success,
                 Summary = "저장 완료",
@@ -427,272 +327,6 @@ else
             await logger.LogError(ex, "Error Export to Excel {Error}", ex.Message);
             AddModuleMessage(Localizer["Message.ExportToExcelError"], MessageType.Error);
         }
-    }
-
-    private bool CustomValidateRow(DataColumn dataColumn, ExpandoObject row)
-    {
-        if (dataColumn == null || row == null) return false;
-        if (dataColumn.AllowDBNull) return true;
-
-        bool isValid = true;
-
-        var dict = (IDictionary<string, object>)row;
-        object value = dict.ContainsKey(dataColumn.ColumnName) ? dict[dataColumn.ColumnName] : null;
-
-        if (dataColumn.DataType == typeof(string))
-            isValid = !string.IsNullOrEmpty(value?.ToString());
-        else if (dataColumn.DataType == typeof(int) || dataColumn.DataType == typeof(long) || dataColumn.DataType == typeof(decimal) || dataColumn.DataType == typeof(double) || dataColumn.DataType == typeof(float))
-            isValid = value != null && !value.Equals(0);
-        else if (dataColumn.DataType == typeof(DateTime))
-            isValid = value != null && !value.Equals(DateTime.MinValue);
-
-        if (!isValid)
-        {
-            NotificationMessage message = new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Warning,
-                    Summary = "필수입력",
-                    Detail = $"{dataColumn.Caption} 은/는 필수 입력 항목입니다.",
-                    Duration = 3000
-                };
-            radzenNotificationService.Notify(message);
-        }
-    
-        return isValid;
-    }
-
-    private async Task OnUpdateDataValue(DataColumn dataColumn, ExpandoObject row, object newValue)
-    {
-        if (row == null) return;
-
-        var dict = (IDictionary<string, object>)row;
-        dict[dataColumn.ColumnName] = newValue;
-
-        if (dict["_rowState"].ToString() != "Insert")
-            dict["_rowState"] = "Update";
-
-        StateHasChanged();
-        // await OnUpdateRow(row);
-        // await EditRow(row);
-    }
-
-    private async Task OnUpdateRow(ExpandoObject row)
-    {
-        if (grid1 == null || !grid1.IsValid) return;
-
-        bool isValid = true;
-
-        foreach (DataColumn dataColumn in _dataTable.Columns)
-        {
-            if (ignoreList.Contains(dataColumn.ColumnName) || byList.Contains(dataColumn.ColumnName) || onList.Contains(dataColumn.ColumnName)) continue;
-
-            isValid = CustomValidateRow(dataColumn, row);
-
-            if (!isValid)
-                break;
-        }
-
-        if (isValid)
-            await grid1.UpdateRow(row);
-    }
-
-    private async Task InsertRow()
-    {
-        if (PageState.User == null) return;
-
-        if (grid1 == null || !grid1.IsValid) return;
-
-        DataRow newRow = _dataTable.NewRow();
-        newRow["_rowState"] = "Insert";
-
-        foreach (DataColumn dataColumn in _dataTable.Columns)
-        {
-            if (ignoreList.Contains(dataColumn.ColumnName)) continue;
-
-            if (byList.Contains(dataColumn.ColumnName))
-                newRow[dataColumn.ColumnName] = PageState.User.Username;
-            else if (onList.Contains(dataColumn.ColumnName))
-                newRow[dataColumn.ColumnName] = DateTime.Now;
-            else if (!dataColumn.AllowDBNull && newRow[dataColumn.ColumnName] == null)
-            {
-                if (dataColumn.DataType == typeof(string))
-                    newRow[dataColumn.ColumnName] = string.Empty;
-                else if (dataColumn.DataType == typeof(int) || dataColumn.DataType == typeof(long) || dataColumn.DataType == typeof(decimal) || dataColumn.DataType == typeof(double) || dataColumn.DataType == typeof(float))
-                    newRow[dataColumn.ColumnName] = 0;
-                else if (dataColumn.DataType == typeof(DateTime))
-                    newRow[dataColumn.ColumnName] = null;
-                else if (dataColumn.DataType == typeof(bool))
-                    newRow[dataColumn.ColumnName] = false;
-                else if (dataColumn.DataType.IsValueType)
-                    newRow[dataColumn.ColumnName] = Activator.CreateInstance(dataColumn.DataType);
-            }
-        }
-
-        // _dataTable.Rows.InsertAt(newRow, 0);
-
-        var expando = new ExpandoObject() as IDictionary<string, object>;
-        foreach (DataColumn dataColumn in newRow.Table.Columns)
-        {
-            expando[dataColumn.ColumnName] = newRow[dataColumn];
-        }
-
-        _tableRows1.Insert(0, (ExpandoObject)expando);
-        _selectedRows1 = _tableRows1.Take(1).ToList();
-        _allRows1.Insert(0, (ExpandoObject)expando);
-
-        await grid1.Reload();
-
-        await SetEditMode(grid1);
-
-        StateHasChanged();
-    }
-
-    private async Task EditRow()
-    {
-        if (grid1 == null || !grid1.IsValid) return;
-
-        foreach (ExpandoObject row in _selectedRows1)
-        {
-            await EditRow(row);
-        }
-    }
-
-    private async Task EditRow(ExpandoObject row)
-    {
-        if (grid1 == null || !grid1.IsValid || row == null) return;
-
-        if (!grid1.IsRowInEditMode(row))
-		    await grid1.EditRow(row);
-    }
-
-    private async Task CancelRow()
-    {
-        if (grid1 == null || !grid1.IsValid) return;
-
-        foreach (ExpandoObject row in _selectedRows1)
-        {
-            await CancelRow(row);
-        }
-    }
-
-    private async Task CancelRow(ExpandoObject row)
-    {
-        if (grid1 == null || !grid1.IsValid || row == null) return;
-
-        var dict = (IDictionary<string, object>)row;
-        string state = dict.ContainsKey("_rowState") && dict["_rowState"] != DBNull.Value ? dict["_rowState"].ToString() : string.Empty;
-
-        grid1.CancelEditRow(row);
-
-        if (state == "Insert")
-        {
-            _tableRows1.Remove(row);
-            _allRows1.Remove(row);
-
-			_tableRows1 = _tableRows1.ToList();
-            _selectedRows1 = _tableRows1.Take(1).ToList();
-
-            StateHasChanged();
-        }
-        else
-        {
-            DataRow[] dataRows = _dataTable.Select(string.Format("Tid = '{0}'", dict["TId"]));
-            if (dataRows.Length > 0)
-            {
-                DataRow dataRow = dataRows[0];
-
-                dict["_rowState"] = string.Empty;
-
-                if (dataRow.HasVersion(DataRowVersion.Original))
-                {
-                    foreach (DataColumn dataColumn in _dataTable.Columns)
-                    {
-                        if (ignoreList.Contains(dataColumn.ColumnName) || byList.Contains(dataColumn.ColumnName) || onList.Contains(dataColumn.ColumnName)) continue;
-
-                        dict[dataColumn.ColumnName] = dataRow[dataColumn.ColumnName, DataRowVersion.Original];
-                    }
-                }
-
-                // await EditRow(row);
-            }
-        }
-    }
-
-    private async Task DeleteRow()
-    {
-        if (grid1 == null || !grid1.IsValid) return;
-
-        foreach (ExpandoObject row in _selectedRows1)
-        {
-            await DeleteRow(row);
-        }
-    }
-
-    private async Task DeleteRow(ExpandoObject row)
-    {
-        if (grid1 == null || !grid1.IsValid || row == null) return;
-
-        var dict = (IDictionary<string, object>)row;
-        string state = dict.ContainsKey("_rowState") && dict["_rowState"] != DBNull.Value ? dict["_rowState"].ToString() : string.Empty;
-
-        if (state == "Insert")
-            await CancelRow(row);
-        else
-            dict["_rowState"] = "Delete";
-    }
-
-    private void OnLoadData(LoadDataArgs args)
-    {
-        if (_allRows1 != null && _allRows1.Count > 0)
-        {
-            _tableRows1 = _allRows1.ToList();
-        }
-
-        // 1. 원본 데이터에서 시작 (필터링 전 원본 보관 변수가 있다면 그것을 사용하세요)
-        IEnumerable<dynamic> query = _tableRows1;
-
-        // 2. 필터링 로직 (추가된 부분)
-        if (args.Filters != null && args.Filters.Any())
-        {
-            foreach (var filter in args.Filters)
-            {
-                var prop = filter.Property;
-                var val = filter.FilterValue?.ToString().ToLower();
-                if (string.IsNullOrEmpty(val)) continue;
-
-                query = query.Where(x =>
-                {
-                    var dict = (IDictionary<string, object>)x;
-                    if (dict.ContainsKey(prop) && dict[prop] != null)
-                    {
-                        // 문자열 포함 여부 검사 (단순화된 예시)
-                        return dict[prop].ToString().ToLower().Contains(val);
-                    }
-                    return false;
-                });
-            }
-        }
-
-        // 3. 정렬 로직 (기존 코드 유지)
-        if (args.Sorts != null && args.Sorts.Any())
-        {
-            IOrderedEnumerable<dynamic> ordered = null;
-            foreach (var sort in args.Sorts)
-            {
-                var prop = sort.Property;
-                var isAsc = sort.SortOrder == SortOrder.Ascending;
-                Func<dynamic, object> keySelector = x => ((IDictionary<string, object>)x).ContainsKey(prop) ? ((IDictionary<string, object>)x)[prop] : null;
-
-                if (ordered == null)
-                    ordered = isAsc ? query.OrderBy(keySelector) : query.OrderByDescending(keySelector);
-                else
-                    ordered = isAsc ? ordered.ThenBy(keySelector) : ordered.ThenByDescending(keySelector);
-            }
-            if (ordered != null) query = ordered;
-        }
-
-        // 4. 최종 결과 반영
-        _tableRows1 = query.Select(x => (ExpandoObject)x).ToList();
     }
 
 }

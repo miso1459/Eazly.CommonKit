@@ -153,4 +153,10 @@
   <data name="Message.ExportToExcelError" xml:space="preserve">
     <value>Error Export To Excel</value>
   </data>
+  <data name="EditRow" xml:space="preserve">
+    <value>Edit Row</value>
+  </data>
+  <data name="ApplyRow" xml:space="preserve">
+    <value>Apply Row</value>
+  </data>
 </root>

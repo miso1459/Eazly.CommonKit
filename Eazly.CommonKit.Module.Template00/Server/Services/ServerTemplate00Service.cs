@@ -162,12 +162,11 @@ namespace Eazly.CommonKit.Module.Template00.Services
             if (!Debugger.IsAttached)
                 return;
 
-            if (!string.IsNullOrEmpty(_TableName))
-            {
-                string strCreateTable = ServerTemplateResources.TCreateTable ?? string.Empty;
-                strCreateTable = GetReplaceCreateQuery(strCreateTable, ModuleId, queryID);
-                ExecuteScriptString(strCreateTable);
-            }
+            if (string.IsNullOrEmpty(_TableName)) return;
+
+            string strCreateTable = ServerTemplateResources.TCreateTable ?? string.Empty;
+            strCreateTable = GetReplaceCreateQuery(strCreateTable, ModuleId, queryID);
+            ExecuteScriptString(strCreateTable);
 
             string strCreateProcedure = string.Empty;
             if (queryID == "Condition")
@@ -197,7 +196,7 @@ namespace Eazly.CommonKit.Module.Template00.Services
                                 strDataType = "NVARCHAR(MAX)";
                                 break;
                             case Type _ when dataColumn.DataType == typeof(DateTime):
-                                strDataType = "DATETIME";
+                                strDataType = "DATETIME2";
                                 break;
                             case Type _ when dataColumn.DataType == typeof(bool):
                                 strDataType = "BIT";
