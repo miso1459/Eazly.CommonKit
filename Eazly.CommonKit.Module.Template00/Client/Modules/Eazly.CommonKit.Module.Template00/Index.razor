@@ -14,6 +14,7 @@
 @inject NavigationManager NavigationManager
 @inject IStringLocalizer<Index> Localizer
 @inject Radzen.NotificationService radzenNotificationService
+@inject IJSRuntime JS
 
 <style>
     /* 1. 그리드 내부 테이블이 화면보다 커지더라도 압축되지 않도록 설정 */
@@ -86,12 +87,12 @@ else
                     <RadzenLabel Text=" " />
                     <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Primary" Icon="Search" Click="@OnGetContents" Text=@Localizer["Query"] />
                     <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Primary" Icon="Save" Click="@OnSave" Text=@Localizer["Save"] Disabled="@_sharedTemplate00UI._ContentsConifg.IsDisSave" />
-                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Success" Icon="Add" Text=@Localizer["NewRow"] Click="@InsertRow" Disabled="@_sharedTemplate00UI._ContentsConifg.IsDisCreate" />
+                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Success" Icon="Add" Text=@Localizer["NewRow"] Click="@_sharedTemplate00UI.InsertRow" Disabled="@_sharedTemplate00UI._ContentsConifg.IsDisCreate" />
                     <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Success" Icon="Edit" Text=@Localizer["EditRow"] Click="@_sharedTemplate00UI.EditRow" Disabled="@_sharedTemplate00UI._ContentsConifg.IsDisUpdate" />
                     <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Success" Icon="check" Text=@Localizer["ApplyRow"] Click="@_sharedTemplate00UI.UpdateRow" Disabled="@_sharedTemplate00UI._ContentsConifg.IsDisUpdate" />
                     <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Warning" Icon="Refresh" Text=@Localizer["CancelRow"] Click="@(args => _sharedTemplate00UI.CancelRow())" Disabled="@_sharedTemplate00UI._ContentsConifg.IsDisSave" />
                     <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Danger" Icon="Delete" Text=@Localizer["DeleteRow"] Click="@(args => _sharedTemplate00UI.DeleteRow())" Disabled="@_sharedTemplate00UI._ContentsConifg.IsDisDelete" />
-                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Info" Icon="grid_on" Text="@Localizer["ExportExcel"]" Click="@(args => Export("excel", "grid1"))" Disabled="@_sharedTemplate00UI._ContentsConifg.IsDisExport" />
+                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Info" Icon="grid_on" Text="@Localizer["ExportExcel"]" Click="@(args => ExportToExcel(_sharedTemplate00UI))" Disabled="@_sharedTemplate00UI._ContentsConifg.IsDisExport" />
                 </RadzenStack>
             </HeaderTemplate>
             <Columns>
@@ -195,8 +196,11 @@ else
         new Resource { ResourceType = ResourceType.Script, Level = ResourceLevel.Site, Url = "_content/Radzen.Blazor/Radzen.Blazor.js" },
 
         new Stylesheet("_content/Eazly.CommonKit.Module.Template00/Module.css"),
-        new Script("_content/Eazly.CommonKit.Module.Template00/Module.js"),
+        new Resource { ResourceType = ResourceType.Script, Level = ResourceLevel.Site, Url = "_content/Eazly.CommonKit.Module.Template00/Module.js" },
+        new Resource { ResourceType = ResourceType.Script, Level = ResourceLevel.Site, Url = "https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js" },
     };
+
+    private string ElementId = $"mymodule-{Guid.NewGuid()}";
 
     private bool _isLoading = true;
 
@@ -266,13 +270,6 @@ else
         }
     }
 
-    public async Task InsertRow()
-    {
-        await _sharedTemplate00UI.InsertRow();
-
-        // StateHasChanged();
-    }
-
     private async Task OnSave()
     {
         try
@@ -316,10 +313,13 @@ else
         }
     }
 
-    private async Task Export(string type, string gridName)
+    private async Task ExportToExcel(Template00UI sharedTemplate00UI)
     {
         try
         {
+            // await JS.InvokeVoidAsync("Eazly.Template00.showMessage", "Hello from Oqtane Module!");
+ 
+            await JS.InvokeVoidAsync("Eazly.Template00.exportToExcel", sharedTemplate00UI.TableRows, ModuleState?.Title);
 
         }
         catch (Exception ex)

@@ -36,6 +36,10 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 			_userName = userName;
 			_radzenNotificationService = radzenNotificationService;
 		}
+		public IList<ExpandoObject> TableRows
+		{
+			get => _tableRows;
+		}
 		public void SetSelectedRows(IList<ExpandoObject> rows)
 		{
 			if (_selectedRows != null)
