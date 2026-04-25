@@ -7,8 +7,6 @@
  - Contents Layout Info
    : ok - [ColumnName], [ColumnCaption], [IsPrimary], [IsEditable], [IsRequired], [IsVisible], [DefaultValue], [DataFormat], [Width]
    : ComponentType, ComponentOptions, ValidationRules
- 
- - 왼쪽 아래 버튼 영역
 
 2. 기본기능 - Blazor
  - Contents 기능
@@ -16,6 +14,7 @@
    : ok - Grid: IsCreate, IsUpdate, IsDelete, IsCancel, IsExport
  - Contents Layout Info
    : ok - [ColumnName], [ColumnCaption], [IsPrimary], [IsEditable], [IsRequired], [IsVisible], [DefaultValue], [DataFormat], [Width]
+   : ok - DateType으로 Control Type 지정
    : ComponentType, ComponentOptions, ValidationRules
 
 * Template00 = Core

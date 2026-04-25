@@ -68,6 +68,11 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 			}
 		}
 
+		public bool IsHistoryTable()
+		{
+			if (_dataTable == null) return false;
+			return _dataTable.Columns.IndexOf("DOCUMNET_DT") > -1;
+		}
 		public bool IsColumnPrimary(DataColumn dataColumn)
 		{
 			bool isPrimary = false;
@@ -107,7 +112,7 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 
 		public string GetColumnWidth(DataColumn dataColumn)
 		{
-			int iWidth = 100;
+			int iWidth = 0;
 
 			if (dataColumn != null)
 			{
@@ -115,7 +120,21 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 					iWidth = Convert.ToInt32(dataColumn.ExtendedProperties["Width"]);
 			}
 
+			if (iWidth == 0)
+				iWidth = 100;
+
 			return iWidth.ToString() + "px";
+		}
+
+		public string GetColumnFormat(DataColumn dataColumn)
+		{ 
+			string strFormat = string.Empty;
+			if (dataColumn != null)
+			{
+				if (dataColumn.ExtendedProperties.ContainsKey("DataFormat"))
+					strFormat = dataColumn.ExtendedProperties["DataFormat"].ToString();
+			}
+			return strFormat;
 		}
 
 		public string GetColumnFormatValue(DataColumn dataColumn, string strValue)
@@ -124,10 +143,19 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 
 			if (dataColumn != null)
 			{
-				if (dataColumn.ExtendedProperties.ContainsKey("DataFormat"))
+				string strDataFormat = GetColumnFormat(dataColumn);
+
+				if (!string.IsNullOrEmpty(strDataFormat))
 				{
-					string strDataFormat = dataColumn.ExtendedProperties["DataFormat"].ToString();
-					if (!string.IsNullOrEmpty(strDataFormat))
+					if (dataColumn.DataType == typeof(DateTime))
+						strFormatValue = string.IsNullOrWhiteSpace(strValue)
+									? string.Empty
+									: DateTime.Parse(strValue).ToString(strDataFormat);
+					else if (dataColumn.DataType == typeof(int) || dataColumn.DataType == typeof(decimal) || dataColumn.DataType == typeof(double))
+						strFormatValue = string.IsNullOrWhiteSpace(strValue)
+									? string.Empty
+									: Decimal.Parse(strValue).ToString(strDataFormat);
+					else
 						strFormatValue = string.Format(strDataFormat, strValue);
 				}
 			}
@@ -244,25 +272,23 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 			if (_grid == null || !_grid.IsValid) return;
 			DataRow newRow = _dataTable.NewRow();
 			newRow["_rowState"] = "Insert";
-			_dataTable.Rows.InsertAt(newRow, 0);
 
 			foreach (DataColumn dataColumn in _dataTable.Columns)
 			{
 				if (ignoreList.Contains(dataColumn.ColumnName)) continue;
-				if (dataColumn.ReadOnly) continue;
 
 				if (byList.Contains(dataColumn.ColumnName))
 					newRow[dataColumn.ColumnName] = _userName;
 				else if (onList.Contains(dataColumn.ColumnName))
 					newRow[dataColumn.ColumnName] = DateTime.Now;
-				else if (!dataColumn.AllowDBNull && newRow[dataColumn.ColumnName] == null)
+				else
 				{
 					if (dataColumn.DataType == typeof(string))
 						newRow[dataColumn.ColumnName] = string.Empty;
 					else if (dataColumn.DataType == typeof(int) || dataColumn.DataType == typeof(long) || dataColumn.DataType == typeof(decimal) || dataColumn.DataType == typeof(double) || dataColumn.DataType == typeof(float))
 						newRow[dataColumn.ColumnName] = 0;
 					else if (dataColumn.DataType == typeof(DateTime))
-						newRow[dataColumn.ColumnName] = null;
+						newRow[dataColumn.ColumnName] = dataColumn.AllowDBNull ? null : DateTime.Today;
 					else if (dataColumn.DataType == typeof(bool))
 						newRow[dataColumn.ColumnName] = false;
 					else if (dataColumn.DataType.IsValueType)
@@ -270,7 +296,7 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 				}
 			}
 
-			// _dataTable.Rows.InsertAt(newRow, 0);
+			_dataTable.Rows.InsertAt(newRow, 0);
 
 			var expando = new ExpandoObject() as IDictionary<string, object>;
 			foreach (DataColumn dataColumn in newRow.Table.Columns)

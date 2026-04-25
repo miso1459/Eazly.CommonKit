@@ -1,6 +1,9 @@
 IF  NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[@TableName]') AND type in (N'U'))
 CREATE TABLE [dbo].[@TableName](
 	[TId] [int] IDENTITY(1,1) NOT NULL,
+	
+	[DOCUMENT_DT] [datetime2](7) NOT NULL,
+	[Code] [nvarchar](100) NOT NULL,
 	[Desc] [nvarchar](255) NULL,
 
 	[TenantId] [int] NOT NULL,

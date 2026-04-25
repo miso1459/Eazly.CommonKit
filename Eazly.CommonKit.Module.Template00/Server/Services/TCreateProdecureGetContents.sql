@@ -25,6 +25,9 @@ BEGIN
 
 	-- result
 	SELECT * FROM @TableName (NOLOCK)
+	WHERE TenantId = @TenantId AND SiteId = @SiteId
+	  AND DOCUMENT_DT BETWEEN @dateFrom AND @dateTo
+	  AND (ISNULL([Code], '''') LIKE ''%'' + @searchValue + ''%'' OR ISNULL([Desc], '''') LIKE ''%'' + @searchValue + ''%'')
 END
 ')
 GO

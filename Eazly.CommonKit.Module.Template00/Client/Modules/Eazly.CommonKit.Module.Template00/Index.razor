@@ -58,12 +58,15 @@ else
     @* 조회조건 *@
     <RadzenCard Variant="Variant.Outlined" class="rz-my-4">
         <RadzenStack Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Left" AlignItems="AlignItems.Start" Gap="0.5rem" >
-            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Left" AlignItems="AlignItems.Center" Gap="1rem" >
-                <RadzenLabel Text="조회기간" />
-                <RadzenDatePicker @bind-Value=@_sharedTemplate00UI._Condition.DateFrom DateFormat="yyyy-MM-dd" />
+            @if (_sharedTemplate00UI.IsHistoryTable())
+            {
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Left" AlignItems="AlignItems.Center" Gap="1rem" >
+                    <RadzenLabel Text="조회기간" />
+                    <RadzenDatePicker @bind-Value=@_sharedTemplate00UI._Condition.DateFrom DateFormat="yyyy-MM-dd" />
                     <RadzenLabel Text="~" />
-                <RadzenDatePicker @bind-Value=@_sharedTemplate00UI._Condition.DateTo DateFormat="yyyy-MM-dd" />
-            </RadzenStack>
+                    <RadzenDatePicker @bind-Value=@_sharedTemplate00UI._Condition.DateTo DateFormat="yyyy-MM-dd" />
+                </RadzenStack>
+            }
 
             <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Left" AlignItems="AlignItems.Center" Gap="1rem">
                 <RadzenLabel Text="검색조건" />
@@ -149,7 +152,8 @@ else
                     }
                     else
                     {
-                        <RadzenDataGridColumn TItem="ExpandoObject" Title="@col.Caption" Width="@_sharedTemplate00UI.GetColumnWidth(col)" Property="@colName" Type="col.DataType" Visible="@_sharedTemplate00UI.IsColumnVisible(col)" Filterable="col.DataType == typeof(string)">
+                        <RadzenDataGridColumn TItem="ExpandoObject" Title="@col.Caption" Width="@_sharedTemplate00UI.GetColumnWidth(col)" Property="@colName" Type="col.DataType" Visible="@_sharedTemplate00UI.IsColumnVisible(col)" 
+                                              Filterable="col.DataType == typeof(string) || col.DataType == typeof(int) || col.DataType == typeof(decimal) || col.DataType == typeof(double)">
                             <Template Context="row"> 
                                 @{
                                     var dict = (IDictionary<string, object>)row;
@@ -161,18 +165,30 @@ else
 
                             <EditTemplate Context="row">
                                 @{
-                                    var dict = (IDictionary<string, object>)row;
-                                    string TId = dict.ContainsKey("TId") && dict["TId"] != DBNull.Value ? dict["TId"].ToString() : string.Empty;
-                                    string state = dict.ContainsKey("_rowState") && dict["_rowState"] != DBNull.Value ? dict["_rowState"].ToString() : string.Empty;
-                                    string colValue = dict.ContainsKey(colName) && dict[colName] != DBNull.Value ? dict[colName].ToString() : string.Empty;
-									string strComponentName = $"{colName}_{TId}";
+                                var dict = (IDictionary<string, object>)row;
+                                string TId = dict.ContainsKey("TId") && dict["TId"] != DBNull.Value ? dict["TId"].ToString() : string.Empty;
+                                string state = dict.ContainsKey("_rowState") && dict["_rowState"] != DBNull.Value ? dict["_rowState"].ToString() : string.Empty;
+                                string colValue = dict.ContainsKey(colName) && dict[colName] != DBNull.Value ? dict[colName].ToString() : string.Empty;
+                                string strComponentName = $"{colName}_{TId}";
+                                string columnFormat = _sharedTemplate00UI.GetColumnFormat(col);
 
-                                    @if (col.ReadOnly || (state != "Insert" && _sharedTemplate00UI.IsColumnPrimary(col)))
-                                        @_sharedTemplate00UI.GetColumnFormatValue(col, colValue)
-                                    else
-                                    {
-                                        <div class="@_sharedTemplate00UI.GetBorderClass(col, row)">
-                                        <RadzenTextBox Name="@strComponentName" Value="@colValue" Change="@(v => _sharedTemplate00UI.OnUpdateDataValue(col, row, v))" Style="width:100%;" />
+                                @if (col.ReadOnly || (state != "Insert" && _sharedTemplate00UI.IsColumnPrimary(col)))
+                                    @_sharedTemplate00UI.GetColumnFormatValue(col, colValue)
+                                else
+                                {
+                                    <div class="@_sharedTemplate00UI.GetBorderClass(col, row)">
+                                        @if (col.DataType == typeof(DateTime))
+                                        {
+                                            <RadzenDatePicker Name="@strComponentName" TValue="DateTime?" DateFormat="@columnFormat" Value="@(string.IsNullOrEmpty(colValue) ? (DateTime?)null : DateTime.Parse(colValue))" Change="@((DateTime? v) => _sharedTemplate00UI.OnUpdateDataValue(col, row, v?.ToString("yyyy-MM-dd")))" Style="width:100%;" />
+                                        }
+                                        else if (col.DataType == typeof(int) || col.DataType == typeof(decimal) || col.DataType == typeof(double))
+                                        {
+                                            <RadzenNumeric Name="@strComponentName" TValue="decimal?" Format="@columnFormat" Value="@(string.IsNullOrEmpty(colValue) ? 0 : Convert.ToDecimal(colValue))" Change="@((decimal? v) => _sharedTemplate00UI.OnUpdateDataValue(col, row, v?.ToString()))" Style="width:100%;" />
+                                        }
+                                        else
+                                        {
+                                            <RadzenTextBox Name="@strComponentName" Value="@colValue" Change="@(v => _sharedTemplate00UI.OnUpdateDataValue(col, row, v))" Style="width:100%;" />
+                                        }
                                         </div>
                                     }
                                 }
@@ -216,7 +232,7 @@ else
 
             await OnGetContents();
 
-            _isLoading = false;
+            _isLoading = _sharedTemplate00UI._dataTable == null;
         }
         catch (Exception ex)
         {

@@ -1,7 +1,10 @@
 using Eazly.CommonKit.Module.Template00.Server.Services;
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.VisualBasic;
+using Newtonsoft.Json.Linq;
 using Oqtane.Enums;
 using Oqtane.Infrastructure;
 using Oqtane.Models;
@@ -9,6 +12,7 @@ using Oqtane.Repository;
 using Oqtane.Security;
 using Oqtane.Shared;
 using Radzen;
+using Radzen.Blazor;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -189,19 +193,19 @@ namespace Eazly.CommonKit.Module.Template00.Services
                         string strDataType = string.Empty;
                         switch (dataColumn.DataType)
                         {
-                            case Type _ when dataColumn.DataType == typeof(int):
+                            case System.Type _ when dataColumn.DataType == typeof(int):
                                 strDataType = "INT";
                                 break;
-                            case Type _ when dataColumn.DataType == typeof(string):
+                            case System.Type _ when dataColumn.DataType == typeof(string):
                                 strDataType = "NVARCHAR(MAX)";
                                 break;
-                            case Type _ when dataColumn.DataType == typeof(DateTime):
+                            case System.Type _ when dataColumn.DataType == typeof(DateTime):
                                 strDataType = "DATETIME2";
                                 break;
-                            case Type _ when dataColumn.DataType == typeof(bool):
+                            case System.Type _ when dataColumn.DataType == typeof(bool):
                                 strDataType = "BIT";
                                 break;
-                            case Type _ when dataColumn.DataType == typeof(decimal):
+                            case System.Type _ when dataColumn.DataType == typeof(decimal):
                                 strDataType = "DECIMAL(18, 2)";
                                 break;
                             default:
@@ -271,19 +275,30 @@ INSERT INTO [Eazly.ConfigContentsColumns]
 SELECT ModuleId, QueryID, ColumnName, ColumnCaption, [IsPrimary], [IsEditable], [IsRequired], [IsVisible], [DefaultValue], [DataFormat], [Width], TenantId, SiteId, [CreatedBy], [CreatedOn], [ModifiedBy], [ModifiedOn] 
   FROM (" + Environment.NewLine;
 
-            string strColumnList = @"SELECT @ModuleId ModuleId, '@QueryId' QueryID, '@ColumnName' ColumnName, '@ColumnCaption' ColumnCaption, 'N' [IsPrimary], '@IsEditable' [IsEditable], '@IsRequired' [IsRequired], 'Y' [IsVisible], '' [DefaultValue], '' [DataFormat], 0 [Width], @TenantId TenantId, @SiteId SiteId, '@UserId' [CreatedBy], GETDATE() [CreatedOn], '@UserId' [ModifiedBy], GETDATE() [ModifiedOn]" + Environment.NewLine;
+            string strColumnList = @"SELECT @ModuleId ModuleId, '@QueryId' QueryID, '@ColumnName' ColumnName, '@ColumnCaption' ColumnCaption, 'N' [IsPrimary], '@IsEditable' [IsEditable], '@IsRequired' [IsRequired], 'Y' [IsVisible], '' [DefaultValue], '@DataFormat' [DataFormat], 0 [Width], @TenantId TenantId, @SiteId SiteId, '@UserId' [CreatedBy], GETDATE() [CreatedOn], '@UserId' [ModifiedBy], GETDATE() [ModifiedOn]" + Environment.NewLine;
+
+			string dateFormat = string.Empty;
+
 
             bool IsFirst = true;
 			foreach (DataColumn dataColumn in dtColumns.Columns)
             {
                 if (ignoreList.Contains(dataColumn.ColumnName)) continue;
 
+				if (!onList.Contains(dataColumn.ColumnName) && dataColumn.DataType == typeof(DateTime))
+                    dateFormat = "yyyy-MM-dd";
+				else if (dataColumn.DataType == typeof(int) || dataColumn.DataType == typeof(decimal) || dataColumn.DataType == typeof(double))
+					dateFormat = "#,##0";
+                else
+                    dateFormat = string.Empty;
+
 				strSQL += (IsFirst ? " " : "UNION ALL" + Environment.NewLine)+
 				GetReplaceExcuteQuery(strColumnList, ModuleId, queryID)
                     .Replace("@ColumnName", dataColumn.ColumnName)
                     .Replace("@ColumnCaption", dataColumn.Caption)
 					.Replace("@IsEditable", byList.Contains(dataColumn.ColumnName) || onList.Contains(dataColumn.ColumnName) ? "N" : "Y")
-					.Replace("@IsRequired", byList.Contains(dataColumn.ColumnName) || onList.Contains(dataColumn.ColumnName) || dataColumn.AllowDBNull ? "N" : "Y");
+					.Replace("@IsRequired", byList.Contains(dataColumn.ColumnName) || onList.Contains(dataColumn.ColumnName) || dataColumn.AllowDBNull ? "N" : "Y")
+                    .Replace("@DataFormat", dateFormat);
 
 				IsFirst = false;
 			}
@@ -317,16 +332,16 @@ WHERE NOT EXISTS(   SELECT 1 FROM[Eazly.ConfigContentsColumns] WITH(NOLOCK)
                 dataColumn.AllowDBNull = !dataRows[0]["IsRequired"].ToString().ToUpper().Equals("Y") || dataRows[0]["IsPrimary"].ToString().ToUpper().Equals("Y");
                 switch (dataColumn.DataType)
                 {
-					case Type _ when dataColumn.DataType == typeof(string):
+					case System.Type _ when dataColumn.DataType == typeof(string):
                         dataColumn.DefaultValue = dataRows[0]["DefaultValue"].ToString();
 						break;
-					case Type _ when dataColumn.DataType == typeof(decimal):
+					case System.Type _ when dataColumn.DataType == typeof(decimal):
                         if (decimal.TryParse(dataRows[0]["DefaultValue"].ToString(), out decimal decValue))
                             dataColumn.DefaultValue = decValue;
                         else
                             dataColumn.DefaultValue = 0;
 						break;
-					case Type _ when dataColumn.DataType == typeof(DateTime):
+					case System.Type _ when dataColumn.DataType == typeof(DateTime):
 						if (dataRows[0]["DefaultValue"].ToString().Equals("Today", StringComparison.InvariantCultureIgnoreCase))
 							dataColumn.DefaultValue = DateTime.Today;
 						else if (dataRows[0]["DefaultValue"].ToString().Equals("Now", StringComparison.InvariantCultureIgnoreCase))
