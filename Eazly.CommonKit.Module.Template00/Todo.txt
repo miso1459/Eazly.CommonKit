@@ -15,7 +15,15 @@
  - Contents Layout Info
    : ok - [ColumnName], [ColumnCaption], [IsPrimary], [IsEditable], [IsRequired], [IsVisible], [DefaultValue], [DataFormat], [Width]
    : ok - DateType으로 Control Type 지정
-   : ComponentType, ComponentOptions, ValidationRules
+   : ComponentType
+    ok - CheckBox
+    - ComboBox
+    - TextArea
+    - RichTextEditor
+    - MultiSelect
+    - RadioButton
+    - FileUpload
+   : ComponentOptions, ValidationRules
 
 * Template00 = Core
 * Master - Detail  Template ??

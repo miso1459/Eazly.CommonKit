@@ -140,7 +140,11 @@ else
                     }
                     else if (_sharedTemplate00UI.onList.Contains(colName))
                     {
-                        <RadzenDataGridColumn TItem="ExpandoObject" Title="@colName" Width="200px" MinWidth="200px" MaxWidth="200px" Property="@colName" Type="col.DataType" Filterable="false">
+                        <RadzenDataGridColumn TItem="ExpandoObject" Title="@colName" Width="200px" MinWidth="200px" MaxWidth="200px" Property="@colName" Type="col.DataType" Filterable="true">
+                            <FilterTemplate Context="column">
+                                <RadzenDatePicker TValue="DateTime?" Style="width:100%;" AllowClear="true" DateFormat="d"
+                                                  Change="@(args => OnDateFilterChange(column, args))" />
+                            </FilterTemplate>
                             <Template Context="row">
                                 @{
                                     var dict = (IDictionary<string, object>)row;
@@ -150,11 +154,47 @@ else
                             </Template>
                         </RadzenDataGridColumn>
                     }
+                    else if (col.DataType == typeof(DateTime))
+                    {
+                        <RadzenDataGridColumn TItem="ExpandoObject" Title="@col.Caption" Width="@_sharedTemplate00UI.GetColumnWidth(col)" Property="@colName" Type="col.DataType" Visible="@_sharedTemplate00UI.IsColumnVisible(col)" Filterable="true">
+                            <FilterTemplate Context="column">
+                                    <RadzenDatePicker TValue="DateTime?" Style="width:100%;" AllowClear="true" DateFormat="d" 
+                                        Change="@(args => OnDateFilterChange(column, args))" />
+                            </FilterTemplate>
+                            <Template Context="row">
+                                @{
+                                    var dict = (IDictionary<string, object>)row;
+                                    string colValue = dict.ContainsKey(colName) && dict[colName] != DBNull.Value ? dict[colName].ToString() : string.Empty;
+                                }
+
+                                @_sharedTemplate00UI.GetColumnFormatValue(col, colValue)
+                            </Template>
+
+                            <EditTemplate Context="row">
+                                @{
+                                    var dict = (IDictionary<string, object>)row;
+                                    string TId = dict.ContainsKey("TId") && dict["TId"] != DBNull.Value ? dict["TId"].ToString() : string.Empty;
+                                    string state = dict.ContainsKey("_rowState") && dict["_rowState"] != DBNull.Value ? dict["_rowState"].ToString() : string.Empty;
+                                    string colValue = dict.ContainsKey(colName) && dict[colName] != DBNull.Value ? dict[colName].ToString() : string.Empty;
+                                    string strComponentName = $"{colName}_{TId}";
+                                    string columnFormat = _sharedTemplate00UI.GetColumnFormat(col);
+
+                                    @if (col.ReadOnly || (state != "Insert" && _sharedTemplate00UI.IsColumnPrimary(col)))
+                                        @_sharedTemplate00UI.GetColumnFormatValue(col, colValue)
+                                    else
+                                    {
+                                        <div class="@_sharedTemplate00UI.GetBorderClass(col, row)">
+                                            <RadzenDatePicker Name="@strComponentName" TValue="DateTime?" DateFormat="@columnFormat" Value="@(string.IsNullOrEmpty(colValue) ? (DateTime?)null : DateTime.Parse(colValue))" Change="@((DateTime? v) => _sharedTemplate00UI.OnUpdateDataValue(col, row, v?.ToString("yyyy-MM-dd")))" Style="width:100%;" />
+                                        </div>
+                                    }
+                                }
+                            </EditTemplate>
+                        </RadzenDataGridColumn>
+                    }
                     else
                     {
-                        <RadzenDataGridColumn TItem="ExpandoObject" Title="@col.Caption" Width="@_sharedTemplate00UI.GetColumnWidth(col)" Property="@colName" Type="col.DataType" Visible="@_sharedTemplate00UI.IsColumnVisible(col)" 
-                                              Filterable="col.DataType == typeof(string) || col.DataType == typeof(int) || col.DataType == typeof(decimal) || col.DataType == typeof(double)">
-                            <Template Context="row"> 
+                        <RadzenDataGridColumn TItem="ExpandoObject" Title="@col.Caption" Width="@_sharedTemplate00UI.GetColumnWidth(col)" Property="@colName" Type="col.DataType" Visible="@_sharedTemplate00UI.IsColumnVisible(col)" Filterable="true">
+                            <Template Context="row">
                                 @{
                                     var dict = (IDictionary<string, object>)row;
                                     string colValue = dict.ContainsKey(colName) && dict[colName] != DBNull.Value ? dict[colName].ToString() : string.Empty;
@@ -184,6 +224,10 @@ else
                                         else if (col.DataType == typeof(int) || col.DataType == typeof(decimal) || col.DataType == typeof(double))
                                         {
                                             <RadzenNumeric Name="@strComponentName" TValue="decimal?" Format="@columnFormat" Value="@(string.IsNullOrEmpty(colValue) ? 0 : Convert.ToDecimal(colValue))" Change="@((decimal? v) => _sharedTemplate00UI.OnUpdateDataValue(col, row, v?.ToString()))" Style="width:100%;" />
+                                        }
+                                        else if (col.DataType == typeof(Boolean))
+                                        {
+                                            <RadzenCheckBox Name="@strComponentName" TValue="Boolean?" Format="@columnFormat" Value="@(string.IsNullOrEmpty(colValue) ? (bool?)null : (colValue == "True"))" Change="@((Boolean? v) => _sharedTemplate00UI.OnUpdateDataValue(col, row, v?.ToString()))" Style="width:100%;" />
                                         }
                                         else
                                         {
@@ -307,7 +351,7 @@ else
                 };
                 radzenNotificationService.Notify(message);
                 return;
-			}
+            }
 
             await ClientTemplate00Service.ExecuteQueryIDAsync(ModuleState.ModuleId, "Save", jsonDataTable);
 
@@ -334,7 +378,7 @@ else
         try
         {
             // await JS.InvokeVoidAsync("Eazly.Template00.showMessage", "Hello from Oqtane Module!");
- 
+
             await JS.InvokeVoidAsync("Eazly.Template00.exportToExcel", sharedTemplate00UI.TableRows, ModuleState?.Title);
 
         }
@@ -345,4 +389,15 @@ else
         }
     }
 
+    private void OnDateFilterChange(RadzenDataGridColumn<ExpandoObject> column, object value)
+    {
+        // 1. 컬럼의 필터 값을 업데이트
+        column.SetFilterValue(value);
+        
+        // 2. 필터 연산자 설정 (필요 시)
+        column.SetFilterOperator(FilterOperator.StartsWith);
+
+        // 3. 그리드 리로드 (실제 데이터 필터링 수행)
+        _sharedTemplate00UI._grid.Reload();
+    }
 }

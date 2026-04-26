@@ -121,7 +121,7 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 			}
 
 			if (iWidth == 0)
-				iWidth = 100;
+				iWidth = 120;
 
 			return iWidth.ToString() + "px";
 		}
@@ -144,6 +144,11 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 			if (dataColumn != null)
 			{
 				string strDataFormat = GetColumnFormat(dataColumn);
+
+				if (dataColumn.DataType == typeof(Boolean))
+					strFormatValue = string.IsNullOrWhiteSpace(strValue)
+								? string.Empty
+								: (strValue == "True" ? "Y" : "N");
 
 				if (!string.IsNullOrEmpty(strDataFormat))
 				{
@@ -216,7 +221,10 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 					if (dataColumn.ReadOnly)
 						dataColumn.ReadOnly = false;
 
-					dataRow[dataColumn.ColumnName] = dict[dataColumn.ColumnName];
+					if (dataColumn.DataType == typeof(Boolean))
+						dataRow[dataColumn.ColumnName] = dict[dataColumn.ColumnName].ToString() == "1";
+					else
+						dataRow[dataColumn.ColumnName] = dict[dataColumn.ColumnName];
 				}
 			}
 		}
@@ -444,8 +452,16 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 						var dict = (IDictionary<string, object>)x;
 						if (dict.ContainsKey(prop) && dict[prop] != null)
 						{
-							// 문자열 포함 여부 검사 (단순화된 예시)
-							return dict[prop].ToString().ToLower().Contains(val);
+							string strData = dict[prop].ToString().ToLower();
+							if (filter.Type == typeof(DateTime))
+							{
+								DateTime? dateData = string.IsNullOrEmpty(strData) ? (DateTime?)null : DateTime.Parse(strData);
+								DateTime? dateVal = string.IsNullOrEmpty(val) ? (DateTime?)null : DateTime.Parse(val);
+
+								return dateData == null || dateVal == null ? false : dateData.Value.Date == dateVal.Value.Date;
+							}
+							else
+								return strData.Contains(val);
 						}
 						return false;
 					});
@@ -472,6 +488,7 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 
 			// 4. 최종 결과 반영
 			_tableRows = query.Select(x => (ExpandoObject)x).ToList();
+			SetSelectedRows(_tableRows.Take(1).ToList());
 		}
 
 		public string GetJsonDataTable()
