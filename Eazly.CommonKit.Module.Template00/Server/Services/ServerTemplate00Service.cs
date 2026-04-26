@@ -275,7 +275,7 @@ INSERT INTO [Eazly.ConfigContentsColumns]
 SELECT ModuleId, QueryID, ColumnName, ColumnCaption, [IsPrimary], [IsEditable], [IsRequired], [IsVisible], [DefaultValue], [DataFormat], [Width], TenantId, SiteId, [CreatedBy], [CreatedOn], [ModifiedBy], [ModifiedOn] 
   FROM (" + Environment.NewLine;
 
-            string strColumnList = @"SELECT @ModuleId ModuleId, '@QueryId' QueryID, '@ColumnName' ColumnName, '@ColumnCaption' ColumnCaption, 'N' [IsPrimary], '@IsEditable' [IsEditable], '@IsRequired' [IsRequired], 'Y' [IsVisible], '' [DefaultValue], '@DataFormat' [DataFormat], 0 [Width], @TenantId TenantId, @SiteId SiteId, '@UserId' [CreatedBy], GETDATE() [CreatedOn], '@UserId' [ModifiedBy], GETDATE() [ModifiedOn]" + Environment.NewLine;
+            string strColumnList = @"SELECT @ModuleId ModuleId, '@QueryId' QueryID, '@ColumnName' ColumnName, '@ColumnCaption' ColumnCaption, 0 [IsPrimary], '@IsEditable' [IsEditable], '@IsRequired' [IsRequired], 1 [IsVisible], '' [DefaultValue], '@DataFormat' [DataFormat], 0 [Width], @TenantId TenantId, @SiteId SiteId, '@UserId' [CreatedBy], GETDATE() [CreatedOn], '@UserId' [ModifiedBy], GETDATE() [ModifiedOn]" + Environment.NewLine;
 
 			string dateFormat = string.Empty;
 
@@ -296,8 +296,8 @@ SELECT ModuleId, QueryID, ColumnName, ColumnCaption, [IsPrimary], [IsEditable], 
 				GetReplaceExcuteQuery(strColumnList, ModuleId, queryID)
                     .Replace("@ColumnName", dataColumn.ColumnName)
                     .Replace("@ColumnCaption", dataColumn.Caption)
-					.Replace("@IsEditable", byList.Contains(dataColumn.ColumnName) || onList.Contains(dataColumn.ColumnName) ? "N" : "Y")
-					.Replace("@IsRequired", byList.Contains(dataColumn.ColumnName) || onList.Contains(dataColumn.ColumnName) || dataColumn.AllowDBNull ? "N" : "Y")
+					.Replace("@IsEditable", byList.Contains(dataColumn.ColumnName) || onList.Contains(dataColumn.ColumnName) ? "0" : "1")
+					.Replace("@IsRequired", byList.Contains(dataColumn.ColumnName) || onList.Contains(dataColumn.ColumnName) || dataColumn.AllowDBNull ? "0" : "1")
                     .Replace("@DataFormat", dateFormat);
 
 				IsFirst = false;
@@ -328,8 +328,8 @@ WHERE NOT EXISTS(   SELECT 1 FROM[Eazly.ConfigContentsColumns] WITH(NOLOCK)
                 if (dataRows.Length == 0) continue;
 
                 dataColumn.Caption = dataRows[0]["ColumnCaption"].ToString();
-                dataColumn.ReadOnly = !dataRows[0]["IsEditable"].ToString().ToUpper().Equals("Y");
-                dataColumn.AllowDBNull = !dataRows[0]["IsRequired"].ToString().ToUpper().Equals("Y") || dataRows[0]["IsPrimary"].ToString().ToUpper().Equals("Y");
+                dataColumn.ReadOnly = !dataRows[0]["IsEditable"].ToString().ToUpper().Equals("TRUE");
+                dataColumn.AllowDBNull = !dataRows[0]["IsRequired"].ToString().ToUpper().Equals("TRUE") || dataRows[0]["IsPrimary"].ToString().ToUpper().Equals("TRUE");
                 switch (dataColumn.DataType)
                 {
 					case System.Type _ when dataColumn.DataType == typeof(string):
@@ -475,10 +475,10 @@ WHERE NOT EXISTS(   SELECT 1 FROM[Eazly.ConfigContentsColumns] WITH(NOLOCK)
 
             if (dt != null && dt.Rows.Count > 0)
             {
-                contentsConifg.IsDisCreate = dt.Rows[0]["IsCreate"] != DBNull.Value ? !(dt.Rows[0]["IsCreate"].ToString() == "Y") : contentsConifg.IsDisCreate;
-                contentsConifg.IsDisUpdate = dt.Rows[0]["IsUpdate"] != DBNull.Value ? !(dt.Rows[0]["IsUpdate"].ToString() == "Y") : contentsConifg.IsDisUpdate;
-                contentsConifg.IsDisDelete = dt.Rows[0]["IsDelete"] != DBNull.Value ? !(dt.Rows[0]["IsDelete"].ToString() == "Y") : contentsConifg.IsDisDelete;
-                contentsConifg.IsDisExport = dt.Rows[0]["IsExport"] != DBNull.Value ? !(dt.Rows[0]["IsExport"].ToString() == "Y") : contentsConifg.IsDisExport;
+                contentsConifg.IsDisCreate = dt.Rows[0]["IsCreate"] != DBNull.Value ? !(dt.Rows[0]["IsCreate"].ToString().ToUpper() == "TRUE") : contentsConifg.IsDisCreate;
+                contentsConifg.IsDisUpdate = dt.Rows[0]["IsUpdate"] != DBNull.Value ? !(dt.Rows[0]["IsUpdate"].ToString().ToUpper() == "TRUE") : contentsConifg.IsDisUpdate;
+                contentsConifg.IsDisDelete = dt.Rows[0]["IsDelete"] != DBNull.Value ? !(dt.Rows[0]["IsDelete"].ToString().ToUpper() == "TRUE") : contentsConifg.IsDisDelete;
+                contentsConifg.IsDisExport = dt.Rows[0]["IsExport"] != DBNull.Value ? !(dt.Rows[0]["IsExport"].ToString().ToUpper() == "TRUE") : contentsConifg.IsDisExport;
 
 				contentsConifg.IsDisSave = contentsConifg.IsDisCreate && contentsConifg.IsDisUpdate && contentsConifg.IsDisDelete;
 			}

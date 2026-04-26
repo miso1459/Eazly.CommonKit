@@ -126,9 +126,6 @@
   <data name="Message.LoadError" xml:space="preserve">
     <value>Error Loading data</value>
   </data>
-  <data name="Message.DeleteError" xml:space="preserve">
-    <value>Error Deleting data</value>
-  </data>
   <data name="Message.SaveError" xml:space="preserve">
     <value>Error Saveing data</value>
   </data>
@@ -136,16 +133,16 @@
     <value>Save</value>
   </data>
   <data name="NewRow" xml:space="preserve">
-    <value>New Row</value>
+    <value>New</value>
   </data>
   <data name="Query" xml:space="preserve">
     <value>Query</value>
   </data>
   <data name="CancelRow" xml:space="preserve">
-    <value>Cancel Row</value>
+    <value>Cancel</value>
   </data>
   <data name="DeleteRow" xml:space="preserve">
-    <value>Delete Row</value>
+    <value>Delete</value>
   </data>
   <data name="ExportExcel" xml:space="preserve">
     <value>Export Excel</value>
@@ -154,9 +151,9 @@
     <value>Error Export To Excel</value>
   </data>
   <data name="EditRow" xml:space="preserve">
-    <value>Edit Row</value>
+    <value>Edit</value>
   </data>
   <data name="ApplyRow" xml:space="preserve">
-    <value>Apply Row</value>
+    <value>Apply</value>
   </data>
 </root>

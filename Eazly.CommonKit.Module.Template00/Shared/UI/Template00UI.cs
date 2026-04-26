@@ -80,7 +80,7 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 			if (dataColumn != null)
 			{
 				if (dataColumn.ExtendedProperties.ContainsKey("IsPrimary"))
-					isPrimary = dataColumn.ExtendedProperties["IsPrimary"]?.ToString().ToUpper() == "Y";
+					isPrimary = dataColumn.ExtendedProperties["IsPrimary"]?.ToString().ToUpper() == "TRUE";
 			}
 
 			return isPrimary;
@@ -104,7 +104,7 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 			if (dataColumn != null)
 			{
 				if (dataColumn.ExtendedProperties.ContainsKey("IsVisible"))
-					isVisible = dataColumn.ExtendedProperties["IsVisible"]?.ToString().ToUpper() == "Y";
+					isVisible = dataColumn.ExtendedProperties["IsVisible"]?.ToString().ToUpper() == "TRUE";
 			}
 
 			return isVisible;
