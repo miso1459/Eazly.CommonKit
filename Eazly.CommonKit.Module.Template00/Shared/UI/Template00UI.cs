@@ -40,6 +40,18 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 		{
 			get => _tableRows;
 		}
+		public void SetSelectedRow(ExpandoObject row, bool isAdd)
+		{
+			if (row == null) return;
+
+			if (_selectedRows == null)
+				_selectedRows = new List<ExpandoObject>();
+
+			if (isAdd) 
+				_selectedRows.Add(row);
+			else
+				_selectedRows.Remove(row);
+		}
 		public void SetSelectedRows(IList<ExpandoObject> rows)
 		{
 			if (_selectedRows != null)
@@ -52,19 +64,22 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 			get => _selectedRows;
 			set
 			{
-				ExpandoObject editModeRow = null;
-
 				if (_selectedRows != null)
 				{
 					foreach (ExpandoObject row in _selectedRows)
 					{
 						if (_grid.IsRowInEditMode(row))
-							editModeRow = row;
+						{
+							if (!value.Contains(row))
+							{
+								value.Add(row);
+								_grid.SelectRow(row);
+							}
+						}
 					}
 				}
 
-				if (editModeRow == null) 
-					_selectedRows = value;
+				_selectedRows = value;
 			}
 		}
 
@@ -92,7 +107,7 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 
 			if (dataColumn.AllowDBNull) return "no-border";
 
-			bool isValid = CustomValidateRow(dataColumn, row);
+			bool isValid = CustomValidateRow(dataColumn, row, false);
 
 			return isValid ? "required-border" : "inValid-border";
 		}
@@ -168,7 +183,7 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 			return strFormatValue;
 		}
 
-		public bool CustomValidateRow(DataColumn dataColumn, ExpandoObject row)
+		public bool CustomValidateRow(DataColumn dataColumn, ExpandoObject row, bool showMessage = true)
 		{
 			if (dataColumn == null || row == null) return false;
 			if (dataColumn.AllowDBNull) return true;
@@ -185,7 +200,7 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 			else if (dataColumn.DataType == typeof(DateTime))
 				isValid = value != null && !value.Equals(DateTime.MinValue);
 
-			if (!isValid)
+			if (!isValid && showMessage)
 			{
 				NotificationMessage message = new NotificationMessage
 				{
@@ -316,8 +331,10 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 			SetSelectedRows(_tableRows.Take(1).ToList());
 
 			await _grid.Reload();
-			
-			await CancelRow();
+
+			//await CancelRow();
+			ExpandoObject row = _selectedRows[0];
+			_grid.CancelEditRow(row);
 			await EditRow();
 		}
 
@@ -330,6 +347,8 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 			foreach (ExpandoObject row in _selectedRows)
 			{
 				await EditRow(row);
+
+				break;
 			}
 		}
 

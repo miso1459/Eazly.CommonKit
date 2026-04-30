@@ -80,8 +80,8 @@ else
         AllowColumnResize="true"
                         AllowSorting="true" AllowMultiColumnSorting="true" ShowMultiColumnSortingIndex="true"
                         AllowFiltering="true" FilterMode="FilterMode.Simple" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" LogicalFilterOperator="LogicalFilterOperator.Or"
-                        SelectionMode="DataGridSelectionMode.Single" @bind-Value=@_sharedTemplate00UI.SelectedRows
-                        EditMode="DataGridEditMode.Single"
+                        SelectionMode="DataGridSelectionMode.Multiple" @bind-Value=@_sharedTemplate00UI.SelectedRows
+                        EditMode="DataGridEditMode.Multiple"
                         LoadData="@_sharedTemplate00UI.OnLoadData"
                         Style="max-height: 1070px; width: 100%; overflow-y: auto;"
                         class="rz-datagrid-scrollable-table">
@@ -89,36 +89,59 @@ else
                 <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Left" AlignItems="AlignItems.Normal" Gap="1rem">
                     <RadzenLabel Text=" " />
                     <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Primary" Icon="Search" Click="@OnGetContents" Text=@Localizer["Query"] />
-                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Primary" Icon="Save" Click="@OnSave" Text=@Localizer["Save"] Disabled="@_sharedTemplate00UI._ContentsConifg.IsDisSave" />
-                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Success" Icon="Add" Text=@Localizer["NewRow"] Click="@_sharedTemplate00UI.InsertRow" Disabled="@_sharedTemplate00UI._ContentsConifg.IsDisCreate" />
-                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Success" Icon="Edit" Text=@Localizer["EditRow"] Click="@_sharedTemplate00UI.EditRow" Disabled="@_sharedTemplate00UI._ContentsConifg.IsDisUpdate" />
-                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Success" Icon="check" Text=@Localizer["ApplyRow"] Click="@_sharedTemplate00UI.UpdateRow" Disabled="@_sharedTemplate00UI._ContentsConifg.IsDisUpdate" />
-                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Warning" Icon="Refresh" Text=@Localizer["CancelRow"] Click="@(args => _sharedTemplate00UI.CancelRow())" Disabled="@_sharedTemplate00UI._ContentsConifg.IsDisSave" />
-                    <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Danger" Icon="Delete" Text=@Localizer["DeleteRow"] Click="@(args => _sharedTemplate00UI.DeleteRow())" Disabled="@_sharedTemplate00UI._ContentsConifg.IsDisDelete" />
+                    @if (!_sharedTemplate00UI._ContentsConifg.IsDisSave)
+                    {
+                        <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Primary" Icon="Save" Click="@OnSave" Text=@Localizer["Save"] Disabled="@_sharedTemplate00UI._ContentsConifg.IsDisSave" />
+                        <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Success" Icon="Add" Text=@Localizer["NewRow"] Click="@_sharedTemplate00UI.InsertRow" Disabled="@_sharedTemplate00UI._ContentsConifg.IsDisCreate" />
+                        <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Success" Icon="Edit" Text=@Localizer["EditRow"] Click="@_sharedTemplate00UI.EditRow" Disabled="@_sharedTemplate00UI._ContentsConifg.IsDisUpdate" />
+                        <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Success" Icon="check" Text=@Localizer["ApplyRow"] Click="@_sharedTemplate00UI.UpdateRow" Disabled="@_sharedTemplate00UI._ContentsConifg.IsDisUpdate" />
+                        <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Warning" Icon="Refresh" Text=@Localizer["CancelRow"] Click="@(args => _sharedTemplate00UI.CancelRow())" Disabled="@_sharedTemplate00UI._ContentsConifg.IsDisSave" />
+                        <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Danger" Icon="Delete" Text=@Localizer["DeleteRow"] Click="@(args => _sharedTemplate00UI.DeleteRow())" Disabled="@_sharedTemplate00UI._ContentsConifg.IsDisDelete" />
+                    }
                     <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Info" Icon="grid_on" Text="@Localizer["ExportExcel"]" Click="@(args => ExportToExcel(_sharedTemplate00UI))" Disabled="@_sharedTemplate00UI._ContentsConifg.IsDisExport" />
                 </RadzenStack>
             </HeaderTemplate>
             <Columns>
-                <RadzenDataGridColumn TItem="ExpandoObject" Title="State" Width="90px" MinWidth="90px" MaxWidth="90px" TextAlign="TextAlign.Center" Property="_rowState" Filterable="false">
-                    <Template Context="row">
-                        @{
-                            var dict = (IDictionary<string, object>)row;
-                            string state = dict.ContainsKey("_rowState") && dict["_rowState"] != DBNull.Value ? dict["_rowState"].ToString() : string.Empty;
+                @if (!_sharedTemplate00UI._ContentsConifg.IsDisSave)
+                {
+                    <RadzenDataGridColumn Width="60px" Sortable="false" Filterable="false">
+                        <HeaderTemplate>
+                            <RadzenCheckBox TabIndex="-1" TriState="false" TValue="bool?" InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "Select all items" } })"
+                            Value="@(_sharedTemplate00UI.SelectedRows == null || _sharedTemplate00UI.SelectedRows?.Any() != true ? false : !_sharedTemplate00UI.SelectedRows.All(i => _sharedTemplate00UI.SelectedRows.Contains(i)) ? null : _sharedTemplate00UI.SelectedRows.Any(i => _sharedTemplate00UI.SelectedRows.Contains(i)))"
+                            Change="@(args => _sharedTemplate00UI.SelectedRows = args == true ? _sharedTemplate00UI._tableRows : null)" />
+                        </HeaderTemplate>
+                        <Template Context="row">
+                            <RadzenCheckBox TabIndex="-1" TriState="false" TValue="bool" 
+                            Value="@(_sharedTemplate00UI.SelectedRows != null && _sharedTemplate00UI.SelectedRows.Contains(row))" InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "Select item" } })"
+                            Change=@(args => { _sharedTemplate00UI._grid.SelectRow(row); }) />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="ExpandoObject" Title="State" Width="90px" MinWidth="90px" MaxWidth="90px" TextAlign="TextAlign.Center" Property="_rowState" Filterable="false">
+                        <Template Context="row">
+                            @{
+                                var dict = (IDictionary<string, object>)row;
+                                string state = dict.ContainsKey("_rowState") && dict["_rowState"] != DBNull.Value ? dict["_rowState"].ToString() : string.Empty;
 
-                            string icon = "info";
-                            string color = "var(--rz-info)";
+                                string icon = "info";
+                                string color = "var(--rz-info)";
 
-                            if (state == "Insert") {
-                                icon = "add_circle"; color = "var(--rz-success)"; 
-                            } else if (state == "Delete") {
-                                icon = "remove_circle"; color = "var(--rz-danger)"; 
-                            } else if (state == "Update") { 
-                                icon = "edit"; color = "var(--rz-warning)"; 
+                                if (state == "Insert")
+                                {
+                                    icon = "add_circle"; color = "var(--rz-success)";
+                                }
+                                else if (state == "Delete")
+                                {
+                                    icon = "remove_circle"; color = "var(--rz-danger)";
+                                }
+                                else if (state == "Update")
+                                {
+                                    icon = "edit"; color = "var(--rz-warning)";
+                                }
                             }
-                        }
-                        <RadzenIcon Icon="@icon" Style=@($"color: {color};") />
-                    </Template>
-                </RadzenDataGridColumn>
+                            <RadzenIcon Icon="@icon" Style=@($"color: {color};") />
+                        </Template>
+                    </RadzenDataGridColumn>
+                }
 
                 @foreach (DataColumn col in _sharedTemplate00UI._dataTable.Columns)
                 {
