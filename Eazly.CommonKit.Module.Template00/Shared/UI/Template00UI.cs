@@ -398,11 +398,20 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 		{
 			if (_grid == null || !_grid.IsValid) return;
 
-			foreach (ExpandoObject row in _tableRows)
+			if (_selectedRows != null)
 			{
-				var dict = (IDictionary<string, object>)row;
-				if (dict["_rowState"].ToString() != "" || _grid.IsRowInEditMode(row))
+				foreach (ExpandoObject row in _selectedRows)
+				{
 					await CancelRow(row);
+				}
+			}
+
+			if (_checkedRows != null)
+			{
+				foreach (ExpandoObject row in _checkedRows)
+				{
+					await CancelRow(row);
+				}
 			}
 		}
 
