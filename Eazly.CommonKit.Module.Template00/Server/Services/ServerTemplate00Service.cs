@@ -40,7 +40,11 @@ namespace Eazly.CommonKit.Module.Template00.Services
         private string _EntityName = string.Empty;
         private string _TableName = string.Empty;
 
-        public ServerTemplate00Service(IUserPermissions userPermissions, ITenantManager tenantManager, ILogManager logger, IHttpContextAccessor accessor, ISqlRepository sqlRepository)
+		private string[] ignoreList = { "_chk", "TId", "_rowState", "TenantId", "SiteId" };
+		private string[] byList = { "CreatedBy", "ModifiedBy" };
+		private string[] onList = { "CreatedOn", "ModifiedOn" };
+
+		public ServerTemplate00Service(IUserPermissions userPermissions, ITenantManager tenantManager, ILogManager logger, IHttpContextAccessor accessor, ISqlRepository sqlRepository)
         {
             _userPermissions = userPermissions;
             _logger = logger;
@@ -59,7 +63,7 @@ namespace Eazly.CommonKit.Module.Template00.Services
         private string GetReplaceCreateQuery(string strQuery, int ModuleId, string queryID)
         {
             strQuery = strQuery.Replace("@EntityName", _EntityName);
-            strQuery = strQuery.Replace("@TableName", _TableName);
+            strQuery = strQuery.Replace("@TableName", '[' + _TableName + ']');
 			strQuery = strQuery.Replace("@ModuleId", ModuleId.ToString());
 			strQuery = strQuery.Replace("@QueryId", queryID);
 
@@ -182,7 +186,7 @@ namespace Eazly.CommonKit.Module.Template00.Services
                 string strCRUD = string.Empty;
                 if (!string.IsNullOrEmpty(_TableName))
                 {
-                    DataTable dtTable = GetSQLQueryDtaTable(string.Format("SELECT TOP 1 * FROM {0} A WHERE 1 <> 1", _TableName));
+                    DataTable dtTable = GetSQLQueryDtaTable(string.Format("SELECT TOP 1 * FROM [{0}] A WHERE 1 <> 1", _TableName));
 
                     string strOpenjsonTable = string.Empty;
                     string strInsertColumnList = string.Empty;
@@ -235,21 +239,21 @@ namespace Eazly.CommonKit.Module.Template00.Services
                     strUpdateList += "\r\n\t\t\t\t\tModifiedBy = @userId, ModifiedOn = GETDATE()";
 
                     strCRUD = string.Format(@"
-	INSERT INTO {0}
+	INSERT INTO [{0}]
 	SELECT	{1}
 	  FROM {2} B
-	LEFT JOIN {0} A ON (B.TId = A.TId)
+	LEFT JOIN [{0}] A ON (B.TId = A.TId)
 	WHERE B._rowState IN ('Insert', 'Update')
 	  AND A.TId IS NULL
 
 	UPDATE A SET {3}
 	  FROM {2} B
-	JOIN {0} A ON (B.TId = A.TId)
+	JOIN [{0}] A ON (B.TId = A.TId)
 	WHERE B._rowState IN ('Insert', 'Update')
 
 	DELETE A
 	  FROM {2} B
-	JOIN {0} A ON (B.TId = A.TId)
+	JOIN [{0}] A ON (B.TId = A.TId)
 	WHERE B._rowState IN ('Delete')
 ", _TableName, strInsertColumnList, strOpenjsonTable, strUpdateList);
                 }
@@ -266,10 +270,6 @@ namespace Eazly.CommonKit.Module.Template00.Services
 
         private void SetDefaultConfigContentColumns(int ModuleId, string queryID, DataTable dtColumns)
         {
-			string[] ignoreList = { "TId", "_rowState", "TenantId", "SiteId" };
-            string[] byList = { "CreatedBy", "ModifiedBy" };
-            string[] onList = { "CreatedOn", "ModifiedOn" };
-
 		string strSQL = @"
 INSERT INTO [Eazly.ConfigContentsColumns]
 SELECT ModuleId, QueryID, ColumnName, ColumnCaption, [IsPrimary], [IsEditable], [IsRequired], [IsVisible], [DefaultValue], [DataFormat], [Width], TenantId, SiteId, [CreatedBy], [CreatedOn], [ModifiedBy], [ModifiedOn] 
@@ -313,8 +313,6 @@ WHERE NOT EXISTS(   SELECT 1 FROM[Eazly.ConfigContentsColumns] WITH(NOLOCK)
 
 		private void SetConfigContentColumns(int ModuleId, string queryID, DataTable dtColumns)
 		{
-			string[] ignoreList = { "TId", "_rowState", "TenantId", "SiteId" };
-
 			string strQuery = ServerTemplateResources.TGetConfigContentsColumns ?? string.Empty;
             strQuery = GetReplaceExcuteQuery(strQuery, ModuleId, queryID);
             DataTable dt = GetSQLQueryDtaTable(strQuery);
@@ -380,7 +378,10 @@ WHERE NOT EXISTS(   SELECT 1 FROM[Eazly.ConfigContentsColumns] WITH(NOLOCK)
             string strQuery = ServerTemplateResources.TGetContentsID ?? string.Empty;
             strQuery = GetReplaceExcuteQuery(strQuery, ModuleId, queryID, jsonParam);
             DataTable dt = GetSQLQueryDtaTable(strQuery);
-            dt.Columns.Add("_rowState", typeof(string));
+			DataColumn _chkCol = new DataColumn("_chk", typeof(bool));
+			_chkCol.DefaultValue = false; // 모든 기존 행에 false가 들어감
+			dt.Columns.Add(_chkCol);
+			dt.Columns.Add("_rowState", typeof(string));
 
 			dt.Columns.Remove("TenantId");
 			dt.Columns.Remove("SiteId");

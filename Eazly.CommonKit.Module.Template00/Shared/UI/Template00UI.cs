@@ -18,7 +18,7 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 	{
 		private string _userName = string.Empty;
 
-		public string[] ignoreList = { "TId", "_rowState", "TenantId", "SiteId" };
+		public string[] ignoreList = { "_chk", "TId", "_rowState", "TenantId", "SiteId" };
 		public string[] byList = { "CreatedBy", "ModifiedBy" };
 		public string[] onList = { "CreatedOn", "ModifiedOn" };
 
@@ -27,6 +27,7 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 
 		public DataTable _dataTable;
 		public IList<ExpandoObject> _tableRows = new List<ExpandoObject>();
+		private IList<ExpandoObject> _checkedRows;
 		private IList<ExpandoObject> _selectedRows;
 
 		public RadzenDataGrid<ExpandoObject> _grid;
@@ -40,6 +41,50 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 		{
 			get => _tableRows;
 		}
+
+		public void SetCheckedRows(ExpandoObject row, bool isAdd)
+		{
+			if (row == null) return;
+
+			if (_checkedRows == null)
+				_checkedRows = new List<ExpandoObject>();
+
+			if (isAdd)
+				_checkedRows.Add(row);
+			else
+				_checkedRows.Remove(row);
+		}
+
+		public IList<ExpandoObject> CheckedRows
+		{
+			get => _checkedRows;
+			set
+			{
+				if (_checkedRows == null)
+				{
+					foreach (ExpandoObject row in _tableRows)
+					{
+						var dict = (IDictionary<string, object>)row;
+						dict["_chk"] = false;
+
+						OnUpdateDataTable(dict);
+					}
+				}
+				else
+				{
+					foreach (ExpandoObject row in _checkedRows)
+					{
+						var dict = (IDictionary<string, object>)row;
+						dict["_chk"] = true;
+
+						OnUpdateDataTable(dict);
+					}
+				}
+
+				_checkedRows = value;
+			}
+		}
+
 		public void SetSelectedRow(ExpandoObject row, bool isAdd)
 		{
 			if (row == null) return;
@@ -52,6 +97,7 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 			else
 				_selectedRows.Remove(row);
 		}
+
 		public void SetSelectedRows(IList<ExpandoObject> rows)
 		{
 			if (_selectedRows != null)
@@ -59,26 +105,12 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 
 			SelectedRows = rows;
 		}
+
 		public IList<ExpandoObject> SelectedRows
 		{
 			get => _selectedRows;
 			set
 			{
-				if (_selectedRows != null)
-				{
-					foreach (ExpandoObject row in _selectedRows)
-					{
-						if (_grid.IsRowInEditMode(row))
-						{
-							if (!value.Contains(row))
-							{
-								value.Add(row);
-								_grid.SelectRow(row);
-							}
-						}
-					}
-				}
-
 				_selectedRows = value;
 			}
 		}
@@ -88,6 +120,7 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 			if (_dataTable == null) return false;
 			return _dataTable.Columns.IndexOf("DOCUMNET_DT") > -1;
 		}
+
 		public bool IsColumnPrimary(DataColumn dataColumn)
 		{
 			bool isPrimary = false;
@@ -237,7 +270,7 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 						dataColumn.ReadOnly = false;
 
 					if (dataColumn.DataType == typeof(Boolean))
-						dataRow[dataColumn.ColumnName] = dict[dataColumn.ColumnName].ToString() == "1";
+						dataRow[dataColumn.ColumnName] = dict[dataColumn.ColumnName].ToString() == "True";
 					else
 						dataRow[dataColumn.ColumnName] = dict[dataColumn.ColumnName];
 				}
@@ -263,9 +296,10 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 
 			if (_selectedRows == null) return;
 
-			foreach (ExpandoObject row in _selectedRows)
+			foreach (ExpandoObject row in _tableRows)
 			{
-				await UpdateRow(row);
+				if (_grid.IsRowInEditMode(row))
+					await UpdateRow(row);
 			}
 		}
 
@@ -364,9 +398,11 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 		{
 			if (_grid == null || !_grid.IsValid) return;
 
-			foreach (ExpandoObject row in _selectedRows)
+			foreach (ExpandoObject row in _tableRows)
 			{
-				await CancelRow(row);
+				var dict = (IDictionary<string, object>)row;
+				if (dict["_rowState"].ToString() != "" || _grid.IsRowInEditMode(row))
+					await CancelRow(row);
 			}
 		}
 
@@ -418,9 +454,9 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 
 		public async Task DeleteRow()
 		{
-			if (_grid == null || !_grid.IsValid) return;
+			if (_grid == null || !_grid.IsValid || CheckedRows == null) return;
 
-			foreach (ExpandoObject row in _selectedRows)
+			foreach (ExpandoObject row in CheckedRows)
 			{
 				await DeleteRow(row);
 			}

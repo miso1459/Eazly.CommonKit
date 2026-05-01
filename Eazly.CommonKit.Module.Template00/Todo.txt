@@ -15,7 +15,7 @@
  - Contents Layout Info
    : ok - [ColumnName], [ColumnCaption], [IsPrimary], [IsEditable], [IsRequired], [IsVisible], [DefaultValue], [DataFormat], [Width]
    : ok - DateType으로 Control Type 지정
-   : ok - MultiSelect
+   : ok - MultiSelect -> SingleSelect로 변경하고 체크 추가
    : ComponentType
     ok - CheckBox
     - ComboBox

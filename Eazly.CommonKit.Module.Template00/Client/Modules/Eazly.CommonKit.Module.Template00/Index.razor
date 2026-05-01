@@ -80,8 +80,8 @@ else
         AllowColumnResize="true"
                         AllowSorting="true" AllowMultiColumnSorting="true" ShowMultiColumnSortingIndex="true"
                         AllowFiltering="true" FilterMode="FilterMode.Simple" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" LogicalFilterOperator="LogicalFilterOperator.Or"
-                        SelectionMode="DataGridSelectionMode.Multiple" @bind-Value=@_sharedTemplate00UI.SelectedRows
-                        EditMode="DataGridEditMode.Multiple"
+                        SelectionMode="DataGridSelectionMode.Single" @bind-Value=@_sharedTemplate00UI.SelectedRows
+                        EditMode="DataGridEditMode.Single"
                         LoadData="@_sharedTemplate00UI.OnLoadData"
                         Style="max-height: 1070px; width: 100%; overflow-y: auto;"
                         class="rz-datagrid-scrollable-table">
@@ -104,18 +104,21 @@ else
             <Columns>
                 @if (!_sharedTemplate00UI._ContentsConifg.IsDisSave)
                 {
-                    <RadzenDataGridColumn Width="60px" Sortable="false" Filterable="false">
-                        <HeaderTemplate>
-                            <RadzenCheckBox TabIndex="-1" TriState="false" TValue="bool?" InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "Select all items" } })"
-                            Value="@(_sharedTemplate00UI.SelectedRows == null || _sharedTemplate00UI.SelectedRows?.Any() != true ? false : !_sharedTemplate00UI.SelectedRows.All(i => _sharedTemplate00UI.SelectedRows.Contains(i)) ? null : _sharedTemplate00UI.SelectedRows.Any(i => _sharedTemplate00UI.SelectedRows.Contains(i)))"
-                            Change="@(args => _sharedTemplate00UI.SelectedRows = args == true ? _sharedTemplate00UI._tableRows : null)" />
-                        </HeaderTemplate>
-                        <Template Context="row">
-                            <RadzenCheckBox TabIndex="-1" TriState="false" TValue="bool" 
-                            Value="@(_sharedTemplate00UI.SelectedRows != null && _sharedTemplate00UI.SelectedRows.Contains(row))" InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "Select item" } })"
-                            Change=@(args => { _sharedTemplate00UI._grid.SelectRow(row); }) />
-                        </Template>
-                    </RadzenDataGridColumn>
+                    @if (!_sharedTemplate00UI._ContentsConifg.IsDisDelete)
+                    {
+                        <RadzenDataGridColumn Width="60px" Sortable="false" Filterable="false">
+                            <HeaderTemplate>
+                                <RadzenCheckBox TabIndex="-1" TriState="false" TValue="bool?" InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "Select all items" } })"
+                                Value="@(_sharedTemplate00UI.CheckedRows == null || _sharedTemplate00UI.CheckedRows?.Count != _sharedTemplate00UI._tableRows?.Count ? false : true)"
+                                Change="@(args => _sharedTemplate00UI.CheckedRows = args == true ? _sharedTemplate00UI._tableRows : null)" />
+                            </HeaderTemplate>
+                            <Template Context="row">
+                                <RadzenCheckBox TabIndex="-1" TriState="false" TValue="bool" 
+                                Value="@(_sharedTemplate00UI.CheckedRows != null && _sharedTemplate00UI.CheckedRows.Contains(row))" InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "Select item" } })"
+                                Change=@(args => { _sharedTemplate00UI.SetCheckedRows(row, args); }) />
+                            </Template>
+                        </RadzenDataGridColumn>
+                    }
                     <RadzenDataGridColumn TItem="ExpandoObject" Title="State" Width="90px" MinWidth="90px" MaxWidth="90px" TextAlign="TextAlign.Center" Property="_rowState" Filterable="false">
                         <Template Context="row">
                             @{
