@@ -17,32 +17,6 @@
 @inject IJSRuntime JS
 
 <style>
-    /* 1. 그리드 내부 테이블이 화면보다 커지더라도 압축되지 않도록 설정 */
-    .rz-datagrid-table {
-        width: max-content !important; /* 컬럼 너비 합계만큼 늘어남 */
-        table-layout: fixed !important; /* 설정된 Width 값을 강제로 유지 */
-    }
-
-    /* 2. 헤더와 데이터 영역 모두 동일하게 적용 */
-    .rz-grid-table {
-        width: max-content !important;
-        table-layout: fixed !important;
-    }
-
-    /* 3. 가로 스크롤바가 항상 나타나도록 설정 */
-    .rz-datagrid-table-wrapper {
-        overflow-x: auto !important;
-    }
-
-    .no-border {
-        border: none;
-    }
-    .required-border {
-        border: 2px solid orange;
-    }
-    .inValid-border {
-        border: 5px solid red;
-    }
 
 </style>
 
@@ -55,8 +29,10 @@ else
     <RadzenTheme Theme="material" />
     <RadzenComponents />
 
+    <RadzenStack Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Left" AlignItems="AlignItems.Normal" Gap="0.5rem"
+                 Style="@GetStackStyle()">
     @* 조회조건 *@
-    <RadzenCard Variant="Variant.Outlined" class="rz-my-4">
+    <RadzenCard Variant="Variant.Outlined">
         <RadzenStack Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Left" AlignItems="AlignItems.Start" Gap="0.5rem" >
             @if (_sharedTemplate00UI.IsHistoryTable())
             {
@@ -75,15 +51,15 @@ else
         </RadzenStack>
     </RadzenCard>
     
-    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Left" AlignItems="AlignItems.Normal" Gap="1rem">
-        <RadzenDataGrid @ref="_sharedTemplate00UI._grid" Data="@_sharedTemplate00UI._tableRows" TItem="ExpandoObject" GridLines="DataGridGridLines.Both"
-        AllowColumnResize="true"
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Left" AlignItems="AlignItems.Normal" Gap="1rem"
+                     Style="height: 100%">
+        <RadzenDataGrid @ref="_sharedTemplate00UI._grid" Data="@_sharedTemplate00UI._tableRows" TItem="ExpandoObject" GridLines="DataGridGridLines.Both" AllowColumnResize="true"
                         AllowSorting="true" AllowMultiColumnSorting="true" ShowMultiColumnSortingIndex="true"
                         AllowFiltering="true" FilterMode="FilterMode.Simple" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" LogicalFilterOperator="LogicalFilterOperator.Or"
                         SelectionMode="DataGridSelectionMode.Single" @bind-Value=@_sharedTemplate00UI.SelectedRows
                         EditMode="DataGridEditMode.Single"
                         LoadData="@_sharedTemplate00UI.OnLoadData"
-                        Style="max-height: 1070px; width: 100%; overflow-y: auto;"
+                        Style="width: 100%; flex: 1; overflow-y: auto;"
                         class="rz-datagrid-scrollable-table">
             <HeaderTemplate>
                 <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Left" AlignItems="AlignItems.Normal" Gap="1rem">
@@ -270,6 +246,7 @@ else
             </Columns>
         </RadzenDataGrid>
     </RadzenStack>
+    </RadzenStack>
 }
 
 @code {
@@ -291,6 +268,18 @@ else
     private bool _isLoading = true;
 
     private Template00UI _sharedTemplate00UI;
+
+    private string GetStackStyle()
+    {
+        int height = 190;
+
+        if (_sharedTemplate00UI.IsHistoryTable())
+            height -= 80;
+
+        string strStyle = $"height: calc(100vh - {height}px);";
+
+        return strStyle;
+    }
 
     protected override async Task OnInitializedAsync()
     {

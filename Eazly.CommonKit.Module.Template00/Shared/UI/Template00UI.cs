@@ -118,7 +118,7 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 		public bool IsHistoryTable()
 		{
 			if (_dataTable == null) return false;
-			return _dataTable.Columns.IndexOf("DOCUMNET_DT") > -1;
+			return _dataTable.Columns.IndexOf("DOCUMENT_DT") > -1;
 		}
 
 		public bool IsColumnPrimary(DataColumn dataColumn)
