@@ -1,11 +1,13 @@
 IF  NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[Eazly.ConfigContents]') AND type in (N'U'))
 CREATE TABLE [dbo].[Eazly.ConfigContents](
+	[TId] [int] IDENTITY(1,1) NOT NULL,
 	[ModuleId] [int] NOT NULL,
 	[QueryID] [nvarchar](255) NOT NULL,
 	[IsCreate] [bit] NOT NULL,
     [IsUpdate] [bit] NOT NULL,
     [IsDelete] [bit] NOT NULL,
     [IsExport] [bit] NOT NULL,
+	[IsByOn] [bit] NOT NULL,
 	[TenantId] [int] NOT NULL,
 	[SiteId] [int] NOT NULL,
 	[CreatedBy] [nvarchar](256) NOT NULL,
@@ -20,7 +22,7 @@ CREATE TABLE [dbo].[Eazly.ConfigContents](
 ) ON [PRIMARY]
 GO
 INSERT INTO [dbo].[Eazly.ConfigContents]
-SELECT '@ModuleId', '@QueryId', 1, 1, 1, 1, @TenantId, @SiteId, '@UserId', GETDATE(), '@UserId', GETDATE()
+SELECT '@ModuleId', '@QueryId', 1, 1, 1, 1, 1, @TenantId, @SiteId, '@UserId', GETDATE(), '@UserId', GETDATE()
   FROM (SELECT '@ModuleId' ModuleId, '@QueryId' QueryId) A
 LEFT JOIN [dbo].[Eazly.ConfigContents] B ON (A.ModuleId = B.ModuleId AND A.queryId = B.queryId)
 WHERE B.ModuleId IS NULL
@@ -29,6 +31,7 @@ GO
 
 IF  NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[Eazly.ConfigContentsColumns]') AND type in (N'U'))
 CREATE TABLE [dbo].[Eazly.ConfigContentsColumns](
+	[TId] [int] IDENTITY(1,1) NOT NULL,
 	[ModuleId] [int] NOT NULL,
 	[QueryID] [nvarchar](255) NOT NULL,
 	[ColumnName] [nvarchar](255) NOT NULL,

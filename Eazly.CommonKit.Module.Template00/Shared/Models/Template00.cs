@@ -19,6 +19,7 @@ namespace Eazly.CommonKit.Module.Template00.Models
 		public Boolean IsDisUpdate { get; set; } = false;
         public Boolean IsDisDelete { get; set; } = false;
 		public Boolean IsDisExport { get; set; } = false;
+		public Boolean IsByOn { get; set; } = false;
 	}
 
 }

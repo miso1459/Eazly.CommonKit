@@ -467,7 +467,8 @@ WHERE NOT EXISTS(   SELECT 1 FROM[Eazly.ConfigContentsColumns] WITH(NOLOCK)
                 IsDisCreate = false,
                 IsDisUpdate = false,
                 IsDisDelete = false,
-                IsDisExport = false
+                IsDisExport = false,
+				IsByOn = false
 			};
 
 			string strQuery = ServerTemplateResources.TGetConfigContents ?? string.Empty;
@@ -480,6 +481,7 @@ WHERE NOT EXISTS(   SELECT 1 FROM[Eazly.ConfigContentsColumns] WITH(NOLOCK)
                 contentsConifg.IsDisUpdate = dt.Rows[0]["IsUpdate"] != DBNull.Value ? !(dt.Rows[0]["IsUpdate"].ToString().ToUpper() == "TRUE") : contentsConifg.IsDisUpdate;
                 contentsConifg.IsDisDelete = dt.Rows[0]["IsDelete"] != DBNull.Value ? !(dt.Rows[0]["IsDelete"].ToString().ToUpper() == "TRUE") : contentsConifg.IsDisDelete;
                 contentsConifg.IsDisExport = dt.Rows[0]["IsExport"] != DBNull.Value ? !(dt.Rows[0]["IsExport"].ToString().ToUpper() == "TRUE") : contentsConifg.IsDisExport;
+				contentsConifg.IsByOn = dt.Rows[0]["IsByOn"] != DBNull.Value ? !(dt.Rows[0]["IsByOn"].ToString().ToUpper() == "TRUE") : contentsConifg.IsByOn;				
 
 				contentsConifg.IsDisSave = contentsConifg.IsDisCreate && contentsConifg.IsDisUpdate && contentsConifg.IsDisDelete;
 			}

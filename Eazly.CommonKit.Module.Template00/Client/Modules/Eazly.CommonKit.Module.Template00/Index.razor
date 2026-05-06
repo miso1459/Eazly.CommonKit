@@ -53,7 +53,7 @@ else
     
     <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Left" AlignItems="AlignItems.Normal" Gap="1rem"
                      Style="height: 100%">
-        <RadzenDataGrid @ref="_sharedTemplate00UI._grid" Data="@_sharedTemplate00UI._tableRows" TItem="ExpandoObject" GridLines="DataGridGridLines.Both" AllowColumnResize="true"
+        <RadzenDataGrid @ref="_sharedTemplate00UI._grid" Data="@_sharedTemplate00UI.TableRows" TItem="ExpandoObject" GridLines="DataGridGridLines.Both" AllowColumnResize="true"
                         AllowSorting="true" AllowMultiColumnSorting="true" ShowMultiColumnSortingIndex="true"
                         AllowFiltering="true" FilterMode="FilterMode.Simple" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" LogicalFilterOperator="LogicalFilterOperator.Or"
                         SelectionMode="DataGridSelectionMode.Single" @bind-Value=@_sharedTemplate00UI.SelectedRows
@@ -85,8 +85,8 @@ else
                         <RadzenDataGridColumn Width="60px" Sortable="false" Filterable="false">
                             <HeaderTemplate>
                                 <RadzenCheckBox TabIndex="-1" TriState="false" TValue="bool?" InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "Select all items" } })"
-                                Value="@(_sharedTemplate00UI.CheckedRows == null || _sharedTemplate00UI.CheckedRows?.Count != _sharedTemplate00UI._tableRows?.Count ? false : true)"
-                                Change="@(args => _sharedTemplate00UI.CheckedRows = args == true ? _sharedTemplate00UI._tableRows : null)" />
+                                Value="@(_sharedTemplate00UI.CheckedRows == null || _sharedTemplate00UI.CheckedRows?.Count != _sharedTemplate00UI.TableRows?.Count ? false : true)"
+                                Change="@(args => _sharedTemplate00UI.CheckedRows = args == true ? _sharedTemplate00UI.TableRows : null)" />
                             </HeaderTemplate>
                             <Template Context="row">
                                 <RadzenCheckBox TabIndex="-1" TriState="false" TValue="bool" 
@@ -122,7 +122,7 @@ else
                     </RadzenDataGridColumn>
                 }
 
-                @foreach (DataColumn col in _sharedTemplate00UI._dataTable.Columns)
+                @foreach (DataColumn col in _sharedTemplate00UI.DataTable.Columns)
                 {
                     @if (_sharedTemplate00UI.ignoreList.Contains(col.ColumnName)) continue;
 
@@ -130,32 +130,38 @@ else
 
                     @if (_sharedTemplate00UI.byList.Contains(colName))
                     {
-                        <RadzenDataGridColumn TItem="ExpandoObject" Title="@colName" Width="100px" MinWidth="100px" Property="@colName" Type="col.DataType">
-                            <Template Context="row">
-                                @{
-                                    var dict = (IDictionary<string, object>)row;
-                                    string colValue = dict.ContainsKey(colName) && dict[colName] != DBNull.Value ? dict[colName].ToString() : string.Empty;
-                                }
-                                @colValue
-                            </Template>
-                        </RadzenDataGridColumn>
-                    }
-                    else if (_sharedTemplate00UI.onList.Contains(colName))
-                    {
-                        <RadzenDataGridColumn TItem="ExpandoObject" Title="@colName" Width="200px" MinWidth="200px" MaxWidth="200px" Property="@colName" Type="col.DataType" Filterable="true">
-                            <FilterTemplate Context="column">
-                                <RadzenDatePicker TValue="DateTime?" Style="width:100%;" AllowClear="true" DateFormat="d"
-                                                  Change="@(args => OnDateFilterChange(column, args))" />
-                            </FilterTemplate>
-                            <Template Context="row">
-                                @{
-                                    var dict = (IDictionary<string, object>)row;
-                                    string colValue = dict.ContainsKey(colName) && dict[colName] != DBNull.Value ? dict[colName].ToString() : string.Empty;
-                                }
-                                @colValue
-                            </Template>
-                        </RadzenDataGridColumn>
-                    }
+                            @if (!_sharedTemplate00UI._ContentsConifg.IsByOn)
+                            {
+                                <RadzenDataGridColumn TItem="ExpandoObject" Title="@colName" Width="100px" MinWidth="100px" Property="@colName" Type="col.DataType">
+                                    <Template Context="row">
+                                        @{
+                                            var dict = (IDictionary<string, object>)row;
+                                            string colValue = dict.ContainsKey(colName) && dict[colName] != DBNull.Value ? dict[colName].ToString() : string.Empty;
+                                        }
+                                        @colValue
+                                    </Template>
+                                </RadzenDataGridColumn>
+                            }
+                        }
+                        else if (_sharedTemplate00UI.onList.Contains(colName))
+                        {
+                            @if (!_sharedTemplate00UI._ContentsConifg.IsByOn)
+                            {
+                                <RadzenDataGridColumn TItem="ExpandoObject" Title="@colName" Width="200px" MinWidth="200px" MaxWidth="200px" Property="@colName" Type="col.DataType" Filterable="true">
+                                    <FilterTemplate Context="column">
+                                        <RadzenDatePicker TValue="DateTime?" Style="width:100%;" AllowClear="true" DateFormat="d"
+                                        Change="@(args => OnDateFilterChange(column, args))" />
+                                    </FilterTemplate>
+                                    <Template Context="row">
+                                        @{
+                                            var dict = (IDictionary<string, object>)row;
+                                            string colValue = dict.ContainsKey(colName) && dict[colName] != DBNull.Value ? dict[colName].ToString() : string.Empty;
+                                        }
+                                        @colValue
+                                    </Template>
+                                </RadzenDataGridColumn>
+                            }
+                        }
                     else if (col.DataType == typeof(DateTime))
                     {
                         <RadzenDataGridColumn TItem="ExpandoObject" Title="@col.Caption" Width="@_sharedTemplate00UI.GetColumnWidth(col)" Property="@colName" Type="col.DataType" Visible="@_sharedTemplate00UI.IsColumnVisible(col)" Filterable="true">
@@ -250,9 +256,9 @@ else
 }
 
 @code {
-    public override string RenderMode => RenderModes.Interactive;
+	public override string RenderMode => RenderModes.Interactive;
 
-    public override List<Resource> Resources => new List<Resource>()
+	public override List<Resource> Resources => new List<Resource>()
     {
         new Stylesheet("_content/Radzen.Blazor/css/material.css"),
         new Stylesheet("_content/Radzen.Blazor/css/material-dark.css"),
@@ -263,156 +269,137 @@ else
         new Resource { ResourceType = ResourceType.Script, Level = ResourceLevel.Site, Url = "https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js" },
     };
 
-    private string ElementId = $"mymodule-{Guid.NewGuid()}";
+	private string ElementId = $"mymodule-{Guid.NewGuid()}";
 
-    private bool _isLoading = true;
+	private bool _isLoading = true;
 
-    private Template00UI _sharedTemplate00UI;
+	private Template00UI _sharedTemplate00UI;
 
-    private string GetStackStyle()
-    {
-        int height = 190;
+	private string GetStackStyle()
+	{
+		int height = 190;
 
-        if (_sharedTemplate00UI.IsHistoryTable())
-            height -= 80;
+		if (_sharedTemplate00UI.IsHistoryTable())
+			height -= 80;
 
-        string strStyle = $"height: calc(100vh - {height}px);";
+		string strStyle = $"height: calc(100vh - {height}px);";
 
-        return strStyle;
-    }
+		return strStyle;
+	}
 
-    protected override async Task OnInitializedAsync()
-    {
-        try
-        {
-            _sharedTemplate00UI = new Template00UI(PageState.User?.Username, radzenNotificationService);
-            _sharedTemplate00UI._Condition = await ClientTemplate00Service.GetConditionAsync(ModuleState.ModuleId);
-            _sharedTemplate00UI._ContentsConifg = await ClientTemplate00Service.GetConfigContentsAsync(ModuleState.ModuleId, "");
+	protected override async Task OnInitializedAsync()
+	{
+		try
+		{
+			_sharedTemplate00UI = new Template00UI(PageState.User?.Username, radzenNotificationService);
+			_sharedTemplate00UI._Condition = await ClientTemplate00Service.GetConditionAsync(ModuleState.ModuleId);
+			_sharedTemplate00UI._ContentsConifg = await ClientTemplate00Service.GetConfigContentsAsync(ModuleState.ModuleId, "");
 
-            await OnGetContents();
+			await OnGetContents();
 
-            _isLoading = _sharedTemplate00UI._dataTable == null;
-        }
-        catch (Exception ex)
-        {
-            await logger.LogError(ex, "Error Loading Template00 {Error}", ex.Message);
-            AddModuleMessage(Localizer["Message.LoadError"], MessageType.Error);
-        }
-    }
+			_isLoading = _sharedTemplate00UI.DataTable == null;
+		}
+		catch (Exception ex)
+		{
+			await logger.LogError(ex, "Error Loading Template00 {Error}", ex.Message);
+			AddModuleMessage(Localizer["Message.LoadError"], MessageType.Error);
+		}
+	}
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		if (firstRender)
+		{
 
-        }
-    }
+		}
+	}
 
-    private async Task OnGetContents()
-    {
-        try
-        {
-            string jsonCondition = JsonSerializer.Serialize(_sharedTemplate00UI._Condition);
-            _sharedTemplate00UI._dataTable = await ClientTemplate00Service.GetContentsIDAsync(ModuleState.ModuleId, "", jsonCondition);
+	private async Task OnGetContents()
+	{
+		try
+		{
+			string jsonCondition = JsonSerializer.Serialize(_sharedTemplate00UI._Condition);
+			_sharedTemplate00UI.DataTable = await ClientTemplate00Service.GetContentsIDAsync(ModuleState.ModuleId, "", jsonCondition);
 
-            _sharedTemplate00UI._tableRows = _sharedTemplate00UI._dataTable.AsEnumerable().Select(row =>
-            {
-                var obj = new ExpandoObject() as IDictionary<string, object>;
-                foreach (DataColumn dataColumn in _sharedTemplate00UI._dataTable.Columns)
-                {
-                    obj.Add(dataColumn.ColumnName, row[dataColumn]);
-                }
-                return (ExpandoObject)obj;
-            }).ToList();
+			await _sharedTemplate00UI.GridReload();
 
-            _sharedTemplate00UI.SetSelectedRows(_sharedTemplate00UI._tableRows.Take(1).ToList());
+			StateHasChanged();
+		}
+		catch (Exception ex)
+		{
+			await logger.LogError(ex, "Error OnGetContents {Error}", ex.Message);
+			AddModuleMessage(Localizer["Message.QueryError"], MessageType.Error);
+		}
+	}
 
-            NotificationMessage message = new NotificationMessage
-            {
-                Severity = NotificationSeverity.Success,
-                Summary = "조회 완료",
-                Detail = $"조회가 완료 되었습니다..",
-                Duration = 3000
-            };
-            radzenNotificationService.Notify(message);
+	private async Task OnSave()
+	{
+		try
+		{
+			NotificationMessage message;
 
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await logger.LogError(ex, "Error OnGetContents {Error}", ex.Message);
-            AddModuleMessage(Localizer["Message.QueryError"], MessageType.Error);
-        }
-    }
+			await _sharedTemplate00UI.UpdateRow();
 
-    private async Task OnSave()
-    {
-        try
-        {
-            NotificationMessage message;
+			string jsonDataTable = _sharedTemplate00UI.GetJsonDataTable();
 
-            await _sharedTemplate00UI.UpdateRow();
-
-            string jsonDataTable = _sharedTemplate00UI.GetJsonDataTable();
-
-            if (string.IsNullOrEmpty(jsonDataTable))
-            {
-                message = new NotificationMessage
+			if (string.IsNullOrEmpty(jsonDataTable))
+			{
+				message = new NotificationMessage
                 {
                     Severity = NotificationSeverity.Info,
                     Summary = "저장할 데이터 없음",
                     Detail = $"저장할 데이터가 없습니다..",
                     Duration = 3000
                 };
-                radzenNotificationService.Notify(message);
-                return;
-            }
+				radzenNotificationService.Notify(message);
+				return;
+			}
 
-            await ClientTemplate00Service.ExecuteQueryIDAsync(ModuleState.ModuleId, "Save", jsonDataTable);
+			await ClientTemplate00Service.ExecuteQueryIDAsync(ModuleState.ModuleId, "Save", jsonDataTable);
 
-            message = new NotificationMessage
+			message = new NotificationMessage
             {
                 Severity = NotificationSeverity.Success,
                 Summary = "저장 완료",
                 Detail = $"저장이 완료 되었습니다..",
                 Duration = 3000
             };
-            radzenNotificationService.Notify(message);
+			radzenNotificationService.Notify(message);
 
-            await OnGetContents();
-        }
-        catch (Exception ex)
-        {
-            await logger.LogError(ex, "Error OnSave {Error}", ex.Message);
-            AddModuleMessage(Localizer["Message.SaveError"], MessageType.Error);
-        }
-    }
+			await OnGetContents();
+		}
+		catch (Exception ex)
+		{
+			await logger.LogError(ex, "Error OnSave {Error}", ex.Message);
+			AddModuleMessage(Localizer["Message.SaveError"], MessageType.Error);
+		}
+	}
 
-    private async Task ExportToExcel(Template00UI sharedTemplate00UI)
-    {
-        try
-        {
-            // await JS.InvokeVoidAsync("Eazly.Template00.showMessage", "Hello from Oqtane Module!");
+	private async Task ExportToExcel(Template00UI sharedTemplate00UI)
+	{
+		try
+		{
+			// await JS.InvokeVoidAsync("Eazly.Template00.showMessage", "Hello from Oqtane Module!");
 
-            await JS.InvokeVoidAsync("Eazly.Template00.exportToExcel", sharedTemplate00UI.TableRows, ModuleState?.Title);
+			await JS.InvokeVoidAsync("Eazly.Template00.exportToExcel", sharedTemplate00UI.TableRows, ModuleState?.Title);
 
-        }
-        catch (Exception ex)
-        {
-            await logger.LogError(ex, "Error Export to Excel {Error}", ex.Message);
-            AddModuleMessage(Localizer["Message.ExportToExcelError"], MessageType.Error);
-        }
-    }
+		}
+		catch (Exception ex)
+		{
+			await logger.LogError(ex, "Error Export to Excel {Error}", ex.Message);
+			AddModuleMessage(Localizer["Message.ExportToExcelError"], MessageType.Error);
+		}
+	}
 
-    private void OnDateFilterChange(RadzenDataGridColumn<ExpandoObject> column, object value)
-    {
-        // 1. 컬럼의 필터 값을 업데이트
-        column.SetFilterValue(value);
-        
-        // 2. 필터 연산자 설정 (필요 시)
-        column.SetFilterOperator(FilterOperator.StartsWith);
+	private async Task OnDateFilterChange(RadzenDataGridColumn<ExpandoObject> column, object value)
+	{
+		// 1. 컬럼의 필터 값을 업데이트
+		column.SetFilterValue(value);
 
-        // 3. 그리드 리로드 (실제 데이터 필터링 수행)
-        _sharedTemplate00UI._grid.Reload();
-    }
+		// 2. 필터 연산자 설정 (필요 시)
+		column.SetFilterOperator(FilterOperator.StartsWith);
+
+		// 3. 그리드 리로드 (실제 데이터 필터링 수행)
+		await _sharedTemplate00UI.GridReload();
+	}
 }

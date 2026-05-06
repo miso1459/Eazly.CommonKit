@@ -24,10 +24,11 @@ BEGIN
 	-- TODO: 구현 
 
 	-- result
-	SELECT * FROM @TableName (NOLOCK)
-	WHERE TenantId = @TenantId AND SiteId = @SiteId
-	--  AND DOCUMENT_DT BETWEEN @dateFrom AND @dateTo
-	  --AND (ISNULL([Code], '''') LIKE ''%'' + @searchValue + ''%'' OR ISNULL([Desc], '''') LIKE ''%'' + @searchValue + ''%'')
+	SELECT * 
+	  FROM @TableName A (NOLOCK)
+	WHERE A.TenantId = @TenantId AND A.SiteId = @SiteId
+	--  AND A.DOCUMENT_DT BETWEEN @dateFrom AND @dateTo
+	  --AND (ISNULL(A.[Code], '''') LIKE ''%'' + @searchValue + ''%'' OR ISNULL(A.[Desc], '''') LIKE ''%'' + @searchValue + ''%'')
 END
 ')
 GO

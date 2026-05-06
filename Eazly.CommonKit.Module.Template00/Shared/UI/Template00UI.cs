@@ -25,18 +25,53 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 		public Models.Contition _Condition;
 		public Models.ContentsConifg _ContentsConifg;
 
-		public DataTable _dataTable;
-		public IList<ExpandoObject> _tableRows = new List<ExpandoObject>();
+		private DataTable _dataTable;
+		private IList<ExpandoObject> _tableRows = new List<ExpandoObject>();
 		private IList<ExpandoObject> _checkedRows;
 		private IList<ExpandoObject> _selectedRows;
 
 		public RadzenDataGrid<ExpandoObject> _grid;
 		private NotificationService _radzenNotificationService;
+		
 		public Template00UI(string userName, NotificationService radzenNotificationService)
 		{
 			_userName = userName;
 			_radzenNotificationService = radzenNotificationService;
 		}
+
+		public DataTable DataTable
+		{
+			get => _dataTable;
+			set
+			{
+				_dataTable = value;
+				if (_dataTable != null)
+				{
+					_tableRows = _dataTable.AsEnumerable().Select(row =>
+					{
+						var obj = new ExpandoObject() as IDictionary<string, object>;
+						foreach (DataColumn dataColumn in _dataTable.Columns)
+						{
+							obj.Add(dataColumn.ColumnName, row[dataColumn]);
+						}
+						return (ExpandoObject)obj;
+					}).ToList();
+
+					SetSelectedRows(TableRows.Take(1).ToList());
+				}
+
+				NotificationMessage message = new NotificationMessage
+				{
+					Severity = NotificationSeverity.Success,
+					Summary = "조회 완료",
+					Detail = $"조회가 완료 되었습니다..",
+					Duration = 3000
+				};
+				_radzenNotificationService.Notify(message);
+			}
+
+		}
+
 		public IList<ExpandoObject> TableRows
 		{
 			get => _tableRows;
@@ -288,6 +323,12 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 				dict["_rowState"] = "Update";
 
 			OnUpdateDataTable(dict);
+		}
+
+		public async Task GridReload()
+		{
+			if (_grid == null || !_grid.IsValid) return;
+			await _grid.Reload();
 		}
 
 		public async Task UpdateRow()
