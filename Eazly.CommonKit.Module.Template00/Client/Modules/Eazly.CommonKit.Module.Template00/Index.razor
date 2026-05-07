@@ -78,11 +78,17 @@ else
                 </RadzenStack>
             </HeaderTemplate>
             <Columns>
+                <RadzenDataGridColumn Title="No" Width="70px" TextAlign="TextAlign.Left" Sortable="false" Filterable="false" Frozen="true">
+                    <Template Context="row">
+                        @((_sharedTemplate00UI._grid.View.ToList().IndexOf(row)) + 1)
+                    </Template>
+                </RadzenDataGridColumn>
+
                 @if (!_sharedTemplate00UI._ContentsConifg.IsDisSave)
                 {
                     @if (!_sharedTemplate00UI._ContentsConifg.IsDisDelete)
                     {
-                        <RadzenDataGridColumn Width="60px" Sortable="false" Filterable="false">
+                            <RadzenDataGridColumn Width="50px" MaxWidth="50px" Sortable="false" Filterable="false" Frozen="true">
                             <HeaderTemplate>
                                 <RadzenCheckBox TabIndex="-1" TriState="false" TValue="bool?" InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "Select all items" } })"
                                 Value="@(_sharedTemplate00UI.CheckedRows == null || _sharedTemplate00UI.CheckedRows?.Count != _sharedTemplate00UI.TableRows?.Count ? false : true)"
@@ -95,7 +101,7 @@ else
                             </Template>
                         </RadzenDataGridColumn>
                     }
-                    <RadzenDataGridColumn TItem="ExpandoObject" Title="State" Width="90px" MinWidth="90px" MaxWidth="90px" TextAlign="TextAlign.Center" Property="_rowState" Filterable="false">
+                    <RadzenDataGridColumn TItem="ExpandoObject" Title="State" Width="80px" MaxWidth="80px" TextAlign="TextAlign.Center" Property="_rowState" Filterable="false" Frozen="true">
                         <Template Context="row">
                             @{
                                 var dict = (IDictionary<string, object>)row;
