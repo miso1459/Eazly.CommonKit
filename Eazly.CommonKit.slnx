@@ -13,6 +13,7 @@
   <Project Path="Eazly.CommonKit.Module.TemplateURL/Package/Eazly.CommonKit.Module.TemplateURL.Package.csproj" />
   <Project Path="Eazly.CommonKit.Module.TemplateURL/Server/Eazly.CommonKit.Module.TemplateURL.Server.csproj" />
   <Project Path="Eazly.CommonKit.Module.TemplateURL/Shared/Eazly.CommonKit.Module.TemplateURL.Shared.csproj" />
+  <Project Path="oqtane.framework-dev/Oqtane.Client/Oqtane.Client.csproj" />
   <Project Path="oqtane.framework-dev/Oqtane.Server/Oqtane.Server.csproj">
     <Build Solution="Debug|*" Project="false" />
   </Project>

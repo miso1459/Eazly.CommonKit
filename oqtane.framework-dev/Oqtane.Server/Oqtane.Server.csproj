@@ -61,6 +61,7 @@
   </PropertyGroup> 
   
   <ItemGroup>
+    <ProjectReference Include="..\Oqtane.Client\Oqtane.Client.csproj" />
     <ProjectReference Include="..\Oqtane.Shared\Oqtane.Shared.csproj" />
   </ItemGroup>
   
