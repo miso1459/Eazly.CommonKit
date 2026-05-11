@@ -28,7 +28,7 @@ BEGIN
 	  FROM @TableName A (NOLOCK)
 	WHERE A.TenantId = @TenantId AND A.SiteId = @SiteId
 	--  AND A.DOCUMENT_DT BETWEEN @dateFrom AND @dateTo
-	  --AND (ISNULL(A.[Code], '''') LIKE ''%'' + @searchValue + ''%'' OR ISNULL(A.[Desc], '''') LIKE ''%'' + @searchValue + ''%'')
+	  --AND (ISNULL(A.[FCode], '''') LIKE ''%'' + @searchValue + ''%'' OR ISNULL(A.[FDesc], '''') LIKE ''%'' + @searchValue + ''%'')
 END
 ')
 GO

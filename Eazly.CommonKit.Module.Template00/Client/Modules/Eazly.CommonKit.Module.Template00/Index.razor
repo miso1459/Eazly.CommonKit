@@ -226,7 +226,7 @@ else
                                 string strComponentName = $"{colName}_{TId}";
                                 string columnFormat = _sharedTemplate00UI.GetColumnFormat(col);
 
-                                @if (col.ReadOnly || (state != "Insert" && _sharedTemplate00UI.IsColumnPrimary(col)))
+                                @if (col.ReadOnly || (_sharedTemplate00UI.IsColumnPrimary(col)) && state != "Insert")
                                     @_sharedTemplate00UI.GetColumnFormatValue(col, colValue)
                                 else
                                 {

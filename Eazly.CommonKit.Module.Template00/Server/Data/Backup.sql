@@ -1,0 +1,9 @@
+DECLARE @DISK NVARCHAR(4000) = N'D:\Blazor\Eazly.CommonKit.Module.Template00\Server\Data\Eazly.CommonKit_'+CONVERT(NVARCHAR(8), GETDATE(), 112)+'.bak'
+--SELECT @DISK
+BACKUP DATABASE [Oqtane-20260312] TO  DISK = @DISK WITH  COPY_ONLY, NOFORMAT, INIT,  NAME = N'Oqtane-20260312-전체 데이터베이스 백업', SKIP, NOREWIND, NOUNLOAD,  STATS = 10
+GO
+
+DECLARE @DISK NVARCHAR(4000) = N'D:\Blazor\Eazly.CommonKit.Module.Template00\Server\Data\Eazly.CommonKit_Install_'+CONVERT(NVARCHAR(8), GETDATE(), 112)+'.bak'
+--SELECT @DISK
+BACKUP DATABASE [Oqtane-2026] TO  DISK = @DISK WITH  COPY_ONLY, NOFORMAT, INIT,  NAME = N'Oqtane-2026-전체 데이터베이스 백업', SKIP, NOREWIND, NOUNLOAD,  STATS = 10
+GO

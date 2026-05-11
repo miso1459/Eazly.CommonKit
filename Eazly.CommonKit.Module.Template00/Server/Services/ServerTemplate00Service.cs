@@ -349,6 +349,9 @@ WHERE NOT EXISTS(   SELECT 1 FROM[Eazly.ConfigContentsColumns] WITH(NOLOCK)
 						else
 							dataColumn.DefaultValue = null;
                         break;
+					case System.Type _ when dataColumn.DataType == typeof(bool):
+						dataColumn.DefaultValue = dataRows[0]["DefaultValue"].ToString().ToUpper().Equals("TRUE");
+						break;
 					default:
                         break;
                 }

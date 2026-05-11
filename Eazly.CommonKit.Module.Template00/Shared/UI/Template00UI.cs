@@ -299,8 +299,10 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 
 			if (dataRow != null)
 			{
+				bool bReadOnly = false;
 				foreach (DataColumn dataColumn in _dataTable.Columns)
 				{
+					bReadOnly = dataColumn.ReadOnly;
 					if (dataColumn.ReadOnly)
 						dataColumn.ReadOnly = false;
 
@@ -308,6 +310,8 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 						dataRow[dataColumn.ColumnName] = dict[dataColumn.ColumnName].ToString() == "True";
 					else
 						dataRow[dataColumn.ColumnName] = dict[dataColumn.ColumnName];
+
+					dataColumn.ReadOnly = bReadOnly;
 				}
 			}
 		}
@@ -379,7 +383,7 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 					newRow[dataColumn.ColumnName] = _userName;
 				else if (onList.Contains(dataColumn.ColumnName))
 					newRow[dataColumn.ColumnName] = DateTime.Now;
-				else
+				else if (dataColumn.DefaultValue == null)
 				{
 					if (dataColumn.DataType == typeof(string))
 						newRow[dataColumn.ColumnName] = string.Empty;
