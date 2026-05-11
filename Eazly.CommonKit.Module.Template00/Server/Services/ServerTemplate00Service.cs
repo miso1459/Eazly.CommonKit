@@ -11,6 +11,7 @@ using Oqtane.Models;
 using Oqtane.Repository;
 using Oqtane.Security;
 using Oqtane.Shared;
+using Org.BouncyCastle.Bcpg.OpenPgp;
 using Radzen;
 using Radzen.Blazor;
 using System;
@@ -376,24 +377,30 @@ WHERE NOT EXISTS(   SELECT 1 FROM[Eazly.ConfigContentsColumns] WITH(NOLOCK)
             if (string.IsNullOrWhiteSpace(jsonParam))
 				jsonParam = "[]";
 
-            CreateTableNProcedure(ModuleId, queryID);
+            DataTable dt = null;
 
-            string strQuery = ServerTemplateResources.TGetContentsID ?? string.Empty;
-            strQuery = GetReplaceExcuteQuery(strQuery, ModuleId, queryID, jsonParam);
-            DataTable dt = GetSQLQueryDtaTable(strQuery);
-			DataColumn _chkCol = new DataColumn("_chk", typeof(bool));
-			_chkCol.DefaultValue = false; // 모든 기존 행에 false가 들어감
-			dt.Columns.Add(_chkCol);
-			dt.Columns.Add("_rowState", typeof(string));
+			if (!String.IsNullOrEmpty(_EntityName))
+            {
+                CreateTableNProcedure(ModuleId, queryID);
 
-			dt.Columns.Remove("TenantId");
-			dt.Columns.Remove("SiteId");
+                string strQuery = ServerTemplateResources.TGetContentsID ?? string.Empty;
+                strQuery = GetReplaceExcuteQuery(strQuery, ModuleId, queryID, jsonParam);
+                dt = GetSQLQueryDtaTable(strQuery);
+                DataColumn _chkCol = new DataColumn("_chk", typeof(bool));
+                _chkCol.DefaultValue = false; // 모든 기존 행에 false가 들어감
+                dt.Columns.Add(_chkCol);
+                dt.Columns.Add("_rowState", typeof(string));
 
-			SetDefaultConfigContentColumns(ModuleId, queryID, dt);
-			SetConfigContentColumns(ModuleId, queryID, dt);
+                dt.Columns.Remove("TenantId");
+                dt.Columns.Remove("SiteId");
+
+                SetDefaultConfigContentColumns(ModuleId, queryID, dt);
+                SetConfigContentColumns(ModuleId, queryID, dt);
+
+            }
 
 			return Task.FromResult(dt);
-        }
+		}
 
         public Task ExecuteQueryIDAsync(int ModuleId, string queryID, string jsonParam)
         {
@@ -434,18 +441,21 @@ WHERE NOT EXISTS(   SELECT 1 FROM[Eazly.ConfigContentsColumns] WITH(NOLOCK)
                 SearchValue = string.Empty
             };
 
-            string strQuery = ServerTemplateResources.TGetCondition ?? string.Empty;
-
-            strQuery = strQuery.Replace("@EntityName", _EntityName);
-            strQuery = strQuery.Replace("@ModuleId", ModuleId.ToString());
-
-            DataTable dt = GetSQLQueryDtaTable(strQuery);
-
-            if (dt != null && dt.Rows.Count > 0)
+            if (!String.IsNullOrEmpty(_EntityName))
             {
-                condition.DateFrom = dt.Rows[0]["DateFrom"] != DBNull.Value ? Convert.ToDateTime(dt.Rows[0]["DateFrom"]) : condition.DateFrom;
-                condition.DateTo = dt.Rows[0]["DateTo"] != DBNull.Value ? Convert.ToDateTime(dt.Rows[0]["DateTo"]) : condition.DateTo;
-                condition.SearchValue = dt.Rows[0]["SearchValue"] != DBNull.Value ? dt.Rows[0]["SearchValue"].ToString() : condition.SearchValue;
+                string strQuery = ServerTemplateResources.TGetCondition ?? string.Empty;
+
+                strQuery = strQuery.Replace("@EntityName", _EntityName);
+                strQuery = strQuery.Replace("@ModuleId", ModuleId.ToString());
+
+                DataTable dt = GetSQLQueryDtaTable(strQuery);
+
+                if (dt != null && dt.Rows.Count > 0)
+                {
+                    condition.DateFrom = dt.Rows[0]["DateFrom"] != DBNull.Value ? Convert.ToDateTime(dt.Rows[0]["DateFrom"]) : condition.DateFrom;
+                    condition.DateTo = dt.Rows[0]["DateTo"] != DBNull.Value ? Convert.ToDateTime(dt.Rows[0]["DateTo"]) : condition.DateTo;
+                    condition.SearchValue = dt.Rows[0]["SearchValue"] != DBNull.Value ? dt.Rows[0]["SearchValue"].ToString() : condition.SearchValue;
+                }
             }
 
             return Task.FromResult(condition);
