@@ -182,7 +182,7 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 
 		public bool IsColumnVisible(DataColumn dataColumn)
 		{
-			bool isVisible = false;
+			bool isVisible = true;
 
 			if (dataColumn != null)
 			{

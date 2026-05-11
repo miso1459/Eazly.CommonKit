@@ -136,38 +136,38 @@ else
 
                     @if (_sharedTemplate00UI.byList.Contains(colName))
                     {
-                            @if (!_sharedTemplate00UI._ContentsConifg.IsByOn)
-                            {
-                                <RadzenDataGridColumn TItem="ExpandoObject" Title="@colName" Width="100px" MinWidth="100px" Property="@colName" Type="col.DataType">
-                                    <Template Context="row">
-                                        @{
-                                            var dict = (IDictionary<string, object>)row;
-                                            string colValue = dict.ContainsKey(colName) && dict[colName] != DBNull.Value ? dict[colName].ToString() : string.Empty;
-                                        }
-                                        @colValue
-                                    </Template>
-                                </RadzenDataGridColumn>
-                            }
-                        }
-                        else if (_sharedTemplate00UI.onList.Contains(colName))
+                        @if (!_sharedTemplate00UI._ContentsConifg.IsByOn)
                         {
-                            @if (!_sharedTemplate00UI._ContentsConifg.IsByOn)
-                            {
-                                <RadzenDataGridColumn TItem="ExpandoObject" Title="@colName" Width="200px" MinWidth="200px" MaxWidth="200px" Property="@colName" Type="col.DataType" Filterable="true">
-                                    <FilterTemplate Context="column">
-                                        <RadzenDatePicker TValue="DateTime?" Style="width:100%;" AllowClear="true" DateFormat="d"
-                                        Change="@(args => OnDateFilterChange(column, args))" />
-                                    </FilterTemplate>
-                                    <Template Context="row">
-                                        @{
-                                            var dict = (IDictionary<string, object>)row;
-                                            string colValue = dict.ContainsKey(colName) && dict[colName] != DBNull.Value ? dict[colName].ToString() : string.Empty;
-                                        }
-                                        @colValue
-                                    </Template>
-                                </RadzenDataGridColumn>
-                            }
+                            <RadzenDataGridColumn TItem="ExpandoObject" Title="@colName" Width="100px" MinWidth="100px" Property="@colName" Type="col.DataType">
+                                <Template Context="row">
+                                    @{
+                                        var dict = (IDictionary<string, object>)row;
+                                        string colValue = dict.ContainsKey(colName) && dict[colName] != DBNull.Value ? dict[colName].ToString() : string.Empty;
+                                    }
+                                    @colValue
+                                </Template>
+                            </RadzenDataGridColumn>
                         }
+                    }
+                    else if (_sharedTemplate00UI.onList.Contains(colName))
+                    {
+                        @if (!_sharedTemplate00UI._ContentsConifg.IsByOn)
+                        {
+                            <RadzenDataGridColumn TItem="ExpandoObject" Title="@colName" Width="200px" MinWidth="200px" MaxWidth="200px" Property="@colName" Type="col.DataType" Filterable="true">
+                                <FilterTemplate Context="column">
+                                    <RadzenDatePicker TValue="DateTime?" Style="width:100%;" AllowClear="true" DateFormat="d"
+                                    Change="@(args => OnDateFilterChange(column, args))" />
+                                </FilterTemplate>
+                                <Template Context="row">
+                                    @{
+                                        var dict = (IDictionary<string, object>)row;
+                                        string colValue = dict.ContainsKey(colName) && dict[colName] != DBNull.Value ? dict[colName].ToString() : string.Empty;
+                                    }
+                                    @colValue
+                                </Template>
+                            </RadzenDataGridColumn>
+                        }
+                    }
                     else if (col.DataType == typeof(DateTime))
                     {
                         <RadzenDataGridColumn TItem="ExpandoObject" Title="@col.Caption" Width="@_sharedTemplate00UI.GetColumnWidth(col)" Property="@colName" Type="col.DataType" Visible="@_sharedTemplate00UI.IsColumnVisible(col)" Filterable="true">

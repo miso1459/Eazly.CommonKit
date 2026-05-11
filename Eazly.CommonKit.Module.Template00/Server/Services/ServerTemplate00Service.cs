@@ -272,7 +272,7 @@ namespace Eazly.CommonKit.Module.Template00.Services
         private void SetDefaultConfigContentColumns(int ModuleId, string queryID, DataTable dtColumns)
         {
 		string strSQL = @"
-INSERT INTO [Eazly.ConfigContentsColumns]
+INSERT INTO [Eazly.ConfigContentsColumns](ModuleId, QueryID, ColumnName, ColumnCaption, [IsPrimary], [IsEditable], [IsRequired], [IsVisible], [DefaultValue], [DataFormat], [Width], TenantId, SiteId, [CreatedBy], [CreatedOn], [ModifiedBy], [ModifiedOn])
 SELECT ModuleId, QueryID, ColumnName, ColumnCaption, [IsPrimary], [IsEditable], [IsRequired], [IsVisible], [DefaultValue], [DataFormat], [Width], TenantId, SiteId, [CreatedBy], [CreatedOn], [ModifiedBy], [ModifiedOn] 
   FROM (" + Environment.NewLine;
 
@@ -305,7 +305,7 @@ SELECT ModuleId, QueryID, ColumnName, ColumnCaption, [IsPrimary], [IsEditable], 
 			}
 
             strSQL += @"        ) A
-WHERE NOT EXISTS(   SELECT 1 FROM[Eazly.ConfigContentsColumns] WITH(NOLOCK)
+WHERE NOT EXISTS(   SELECT 1 FROM [Eazly.ConfigContentsColumns] WITH(NOLOCK)
                     WHERE ModuleId = A.ModuleId AND QueryID = A.QueryID AND ColumnName = A.ColumnName
                 )";   
 
