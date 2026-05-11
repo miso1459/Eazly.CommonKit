@@ -18,7 +18,7 @@
    : ok - MultiSelect -> SingleSelect로 변경하고 체크 추가
    : ComponentType
     ok - CheckBox
-    - ComboBox
+    - ComboBox: DropDownList 관리 프로그램 개발
     - TextArea
     - RichTextEditor
     - MultiSelect

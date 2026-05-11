@@ -63,7 +63,7 @@ namespace Eazly.CommonKit.Module.Template00.Services
         private string GetReplaceCreateQuery(string strQuery, int ModuleId, string queryID)
         {
             strQuery = strQuery.Replace("@EntityName", _EntityName);
-            strQuery = strQuery.Replace("@TableName", '[' + _TableName + ']');
+            strQuery = strQuery.Replace("@TableName", queryID == "CreateTable" ? _TableName : '[' + _TableName + ']');
 			strQuery = strQuery.Replace("@ModuleId", ModuleId.ToString());
 			strQuery = strQuery.Replace("@QueryId", queryID);
 
@@ -173,7 +173,7 @@ namespace Eazly.CommonKit.Module.Template00.Services
             if (string.IsNullOrEmpty(_TableName)) return;
 
             string strCreateTable = ServerTemplateResources.TCreateTable ?? string.Empty;
-            strCreateTable = GetReplaceCreateQuery(strCreateTable, ModuleId, queryID);
+            strCreateTable = GetReplaceCreateQuery(strCreateTable, ModuleId, "CreateTable");
             ExecuteScriptString(strCreateTable);
 
             string strCreateProcedure = string.Empty;
@@ -327,7 +327,7 @@ WHERE NOT EXISTS(   SELECT 1 FROM[Eazly.ConfigContentsColumns] WITH(NOLOCK)
 
                 dataColumn.Caption = dataRows[0]["ColumnCaption"].ToString();
                 dataColumn.ReadOnly = !dataRows[0]["IsEditable"].ToString().ToUpper().Equals("TRUE");
-                dataColumn.AllowDBNull = !dataRows[0]["IsRequired"].ToString().ToUpper().Equals("TRUE") || dataRows[0]["IsPrimary"].ToString().ToUpper().Equals("TRUE");
+                dataColumn.AllowDBNull = !dataRows[0]["IsRequired"].ToString().ToUpper().Equals("TRUE") && !dataRows[0]["IsPrimary"].ToString().ToUpper().Equals("TRUE");
                 switch (dataColumn.DataType)
                 {
 					case System.Type _ when dataColumn.DataType == typeof(string):

@@ -3,8 +3,8 @@ CREATE TABLE [dbo].[@TableName](
 	[TId] [int] IDENTITY(1,1) NOT NULL,
 	
 	[DOCUMENT_DT] [datetime2](7) NOT NULL,
-	[Code] [nvarchar](100) NOT NULL,
-	[Desc] [nvarchar](255) NULL,
+	[FCode] [nvarchar](100) NOT NULL,
+	[FDesc] [nvarchar](255) NULL,
 
 	[TenantId] [int] NOT NULL,
 	[SiteId] [int] NOT NULL,
