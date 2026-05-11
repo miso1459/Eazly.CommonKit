@@ -214,7 +214,8 @@ else
                                     string colValue = dict.ContainsKey(colName) && dict[colName] != DBNull.Value ? dict[colName].ToString() : string.Empty;
                                 }
 
-                                @_sharedTemplate00UI.GetColumnFormatValue(col, colValue)
+                                @* white-space: pre-line을 적용하여 \n을 줄바꿈으로 표시 *@
+                                <span style="white-space: pre-line;">@_sharedTemplate00UI.GetColumnFormatValue(col, colValue)</span>
                             </Template>
 
                             <EditTemplate Context="row">
@@ -245,7 +246,14 @@ else
                                         }
                                         else
                                         {
-                                            <RadzenTextBox Name="@strComponentName" Value="@colValue" Change="@(v => _sharedTemplate00UI.OnUpdateDataValue(col, row, v))" Style="width:100%;" />
+                                            @if (col.MaxLength <= 255)
+                                            {
+                                                <RadzenTextBox Name="@strComponentName" Value="@colValue" Change="@(v => _sharedTemplate00UI.OnUpdateDataValue(col, row, v))" Style="width:100%;" />
+                                            }
+                                            else
+                                            {
+                                                <RadzenTextArea Name="@strComponentName" Value="@colValue" Change="@(v => _sharedTemplate00UI.OnUpdateDataValue(col, row, v))" Style="width:100%;" Rows="3" />
+                                            }
                                         }
                                         </div>
                                     }

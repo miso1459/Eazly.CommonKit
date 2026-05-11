@@ -383,7 +383,7 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 					newRow[dataColumn.ColumnName] = _userName;
 				else if (onList.Contains(dataColumn.ColumnName))
 					newRow[dataColumn.ColumnName] = DateTime.Now;
-				else if (dataColumn.DefaultValue == null)
+				else if (dataColumn.DefaultValue == null || dataColumn.DefaultValue == DBNull.Value)
 				{
 					if (dataColumn.DataType == typeof(string))
 						newRow[dataColumn.ColumnName] = string.Empty;
