@@ -226,6 +226,7 @@ else
                                 string colValue = dict.ContainsKey(colName) && dict[colName] != DBNull.Value ? dict[colName].ToString() : string.Empty;
                                 string strComponentName = $"{colName}_{TId}";
                                 string columnFormat = _sharedTemplate00UI.GetColumnFormat(col);
+								string controlType = _sharedTemplate00UI.GetColumnControlType(col);
 
                                 @if (col.ReadOnly || (_sharedTemplate00UI.IsColumnPrimary(col)) && state != "Insert")
                                     @_sharedTemplate00UI.GetColumnFormatValue(col, colValue)
@@ -246,13 +247,23 @@ else
                                         }
                                         else
                                         {
-                                            @if (col.MaxLength <= 255)
+                                            @if (col.MaxLength > 255)
                                             {
-                                                <RadzenTextBox Name="@strComponentName" Value="@colValue" Change="@(v => _sharedTemplate00UI.OnUpdateDataValue(col, row, v))" Style="width:100%;" />
+                                                <RadzenTextArea Name="@strComponentName" Value="@colValue" Change="@(v => _sharedTemplate00UI.OnUpdateDataValue(col, row, v))" Style="width:100%;" Rows="3" />
                                             }
                                             else
                                             {
-                                                <RadzenTextArea Name="@strComponentName" Value="@colValue" Change="@(v => _sharedTemplate00UI.OnUpdateDataValue(col, row, v))" Style="width:100%;" Rows="3" />
+                                                @if (controlType == "DropDown")
+                                                {
+                                                    <RadzenDropDown AllowClear="true" AllowFiltering="true" Data=@_sharedTemplate00UI.GetDropDownList(col) Name="DropDownFilteringLoadData"
+                                                        TextProperty="@nameof(DropDownList.FDesc)" ValueProperty="@nameof(DropDownList.FCode)"
+                                                        Value="@colValue" Change="@(v => _sharedTemplate00UI.OnUpdateDataValue(col, row, v))" 
+                                                        PopupStyle="width: auto; min-width: 100%;" Style="width: 100%;" />
+                                                }
+                                                else
+                                                {
+                                                    <RadzenTextBox Name="@strComponentName" Value="@colValue" Change="@(v => _sharedTemplate00UI.OnUpdateDataValue(col, row, v))" Style="width:100%;" />
+                                                }
                                             }
                                         }
                                         </div>

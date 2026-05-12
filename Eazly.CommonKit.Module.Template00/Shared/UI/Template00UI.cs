@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Eazly.CommonKit.Module.Template00.Models;
+using Microsoft.Extensions.Logging;
 using Radzen;
 using Radzen.Blazor;
 using System;
@@ -29,6 +30,7 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 		private IList<ExpandoObject> _tableRows = new List<ExpandoObject>();
 		private IList<ExpandoObject> _checkedRows;
 		private IList<ExpandoObject> _selectedRows;
+		private Dictionary<string, IEnumerable<DropDownList>> _DrowDownList = new Dictionary<string, IEnumerable<DropDownList>>(StringComparer.OrdinalIgnoreCase);
 
 		public RadzenDataGrid<ExpandoObject> _grid;
 		private NotificationService _radzenNotificationService;
@@ -59,6 +61,8 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 
 					SetSelectedRows(TableRows.Take(1).ToList());
 				}
+
+				SetDrowDownList(_dataTable);
 
 				NotificationMessage message = new NotificationMessage
 				{
@@ -226,29 +230,82 @@ namespace Eazly.CommonKit.Module.Template00.Shared.UI
 
 			if (dataColumn != null)
 			{
-				string strDataFormat = GetColumnFormat(dataColumn);
+				IEnumerable<DropDownList> dropDownList = GetDropDownList(dataColumn);
 
-				if (dataColumn.DataType == typeof(Boolean))
-					strFormatValue = string.IsNullOrWhiteSpace(strValue)
-								? string.Empty
-								: (strValue == "True" ? "Y" : "N");
-
-				if (!string.IsNullOrEmpty(strDataFormat))
+				if (dropDownList != null)
 				{
-					if (dataColumn.DataType == typeof(DateTime))
+					// 항목을 찾으면 FDesc, 못 찾으면 strValue 그대로 대입
+					strFormatValue = dropDownList.FirstOrDefault(x => x.FCode == strValue)?.FDesc ?? strValue;
+				}
+				else
+				{
+					string strDataFormat = GetColumnFormat(dataColumn);
+
+					if (dataColumn.DataType == typeof(Boolean))
 						strFormatValue = string.IsNullOrWhiteSpace(strValue)
 									? string.Empty
-									: DateTime.Parse(strValue).ToString(strDataFormat);
-					else if (dataColumn.DataType == typeof(int) || dataColumn.DataType == typeof(decimal) || dataColumn.DataType == typeof(double))
-						strFormatValue = string.IsNullOrWhiteSpace(strValue)
-									? string.Empty
-									: Decimal.Parse(strValue).ToString(strDataFormat);
-					else
-						strFormatValue = string.Format(strDataFormat, strValue);
+									: (strValue == "True" ? "Y" : "N");
+
+					if (!string.IsNullOrEmpty(strDataFormat))
+					{
+						if (dataColumn.DataType == typeof(DateTime))
+							strFormatValue = string.IsNullOrWhiteSpace(strValue)
+										? string.Empty
+										: DateTime.Parse(strValue).ToString(strDataFormat);
+						else if (dataColumn.DataType == typeof(int) || dataColumn.DataType == typeof(decimal) || dataColumn.DataType == typeof(double))
+							strFormatValue = string.IsNullOrWhiteSpace(strValue)
+										? string.Empty
+										: Decimal.Parse(strValue).ToString(strDataFormat);
+						else
+							strFormatValue = string.Format(strDataFormat, strValue);
+					}
 				}
 			}
 
 			return strFormatValue;
+		}
+
+		public string GetColumnControlType(DataColumn dataColumn)
+		{
+			string strControlType = string.Empty;
+			if (dataColumn != null)
+			{
+				if (dataColumn.ExtendedProperties.ContainsKey("ControlType"))
+					strControlType = dataColumn.ExtendedProperties["ControlType"].ToString();
+			}
+
+			return strControlType;
+		}
+
+		private void SetDrowDownList(DataTable dataTable)
+		{
+			_DrowDownList.Clear();
+
+			if (dataTable == null) return;
+
+			foreach (DataColumn dataColumn in dataTable.Columns)
+			{
+				if (dataColumn.ExtendedProperties.ContainsKey("DropDownList"))
+				{
+					var dropDownList = dataColumn.ExtendedProperties["DropDownList"] as IEnumerable<DropDownList>;
+					if (_DrowDownList.ContainsKey(dataColumn.ColumnName))
+						_DrowDownList[dataColumn.ColumnName] = dropDownList;
+					else
+						_DrowDownList.Add(dataColumn.ColumnName, dropDownList);
+				}
+			}
+		}
+
+		public IEnumerable<DropDownList> GetDropDownList(DataColumn dataColumn)
+		{
+			IEnumerable<DropDownList> dropDownList = null;
+			if (dataColumn != null)
+			{
+				if (dataColumn.ExtendedProperties.ContainsKey("DropDownList"))
+					dropDownList = dataColumn.ExtendedProperties["DropDownList"] as IEnumerable<DropDownList>;
+			}
+
+			return dropDownList;
 		}
 
 		public bool CustomValidateRow(DataColumn dataColumn, ExpandoObject row, bool showMessage = true)

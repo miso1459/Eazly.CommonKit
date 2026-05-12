@@ -1,3 +1,4 @@
+using Eazly.CommonKit.Module.Template00.Models;
 using Eazly.CommonKit.Module.Template00.Server.Services;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.AspNetCore.Http;
@@ -115,7 +116,7 @@ namespace Eazly.CommonKit.Module.Template00.Services
             return boolResult;
         }
 
-        private DataTable GetSQLQueryDtaTable(string strQuery)
+        private DataTable GetSQLQueryDataTable(string strQuery)
         {
             if (string.IsNullOrWhiteSpace(strQuery))
                 return null;
@@ -136,7 +137,7 @@ namespace Eazly.CommonKit.Module.Template00.Services
         {
             string strResult = string.Empty;
 
-            DataTable dt = GetSQLQueryDtaTable(strQuery);
+            DataTable dt = GetSQLQueryDataTable(strQuery);
 
             if (dt != null && dt.Rows.Count > 0 && dt.Columns.Count > 0)
                 strResult = dt.Rows[0][0].ToString();
@@ -159,7 +160,7 @@ namespace Eazly.CommonKit.Module.Template00.Services
         {
             if (string.IsNullOrEmpty(_EntityName))
             {
-                DataTable dtSetting = GetSQLQueryDtaTable(string.Format("SELECT * FROM dbo.UFN_Setting({0}) A ", ModuleId.ToString()));
+                DataTable dtSetting = GetSQLQueryDataTable(string.Format("SELECT * FROM dbo.UFN_Setting({0}) A ", ModuleId.ToString()));
 
                 if (dtSetting != null && dtSetting.Rows.Count > 0)
                 {
@@ -187,7 +188,7 @@ namespace Eazly.CommonKit.Module.Template00.Services
                 string strCRUD = string.Empty;
                 if (!string.IsNullOrEmpty(_TableName))
                 {
-                    DataTable dtTable = GetSQLQueryDtaTable(string.Format("SELECT TOP 1 * FROM [{0}] A WHERE 1 <> 1", _TableName));
+                    DataTable dtTable = GetSQLQueryDataTable(string.Format("SELECT TOP 1 * FROM [{0}] A WHERE 1 <> 1", _TableName));
 
                     string strOpenjsonTable = string.Empty;
                     string strInsertColumnList = string.Empty;
@@ -312,11 +313,50 @@ WHERE NOT EXISTS(   SELECT 1 FROM [Eazly.ConfigContentsColumns] WITH(NOLOCK)
             ExecuteScriptString(strSQL);
 		}
 
+
+		static IEnumerable<DropDownList> IEnumerableConvert(DataTable table)
+		{
+			return table.AsEnumerable()
+				.Select(row => new DropDownList
+				{
+					FCode = row["FCode"].ToString(),
+					FDesc = row["FDesc"].ToString()
+				});
+		}
+
+		private IEnumerable<DropDownList> GetDropDownList(string strDropDownSQL, string strDropDownWhere)
+		{
+			string strSQL = strDropDownSQL;
+
+            if (!string.IsNullOrEmpty(strDropDownSQL) && !string.IsNullOrEmpty(strDropDownWhere))
+			{
+				strSQL = "SELECT * FROM (" + strDropDownSQL + ") A WHERE 1=1 " + strDropDownWhere;
+			}
+
+            if (string.IsNullOrEmpty(strSQL))
+                return null;
+
+            DataTable dt = null;
+
+			try
+            {
+				dt = GetSQLQueryDataTable(strSQL);
+			}
+			catch (Exception)
+            {
+				dt = GetSQLQueryDataTable("SELECT '' FCode, '' FDesc");
+			}
+
+			IEnumerable<DropDownList> dropDownList = IEnumerableConvert(dt);
+
+			return dropDownList;
+		}
+
 		private void SetConfigContentColumns(int ModuleId, string queryID, DataTable dtColumns)
 		{
 			string strQuery = ServerTemplateResources.TGetConfigContentsColumns ?? string.Empty;
             strQuery = GetReplaceExcuteQuery(strQuery, ModuleId, queryID);
-            DataTable dt = GetSQLQueryDtaTable(strQuery);
+            DataTable dt = GetSQLQueryDataTable(strQuery);
 
             DataRow[] dataRows = null;
             foreach (DataColumn dataColumn in dtColumns.Columns)
@@ -360,6 +400,10 @@ WHERE NOT EXISTS(   SELECT 1 FROM [Eazly.ConfigContentsColumns] WITH(NOLOCK)
 				dataColumn.ExtendedProperties["IsVisible"] = dataRows[0]["IsVisible"].ToString();
 				dataColumn.ExtendedProperties["DataFormat"] = dataRows[0]["DataFormat"].ToString();
 				dataColumn.ExtendedProperties["Width"] = dataRows[0]["Width"];
+				dataColumn.ExtendedProperties["ControlType"] = dataRows[0]["ControlType"];
+				string strDropDownSQL = dataRows[0]["DropDownSQL"].ToString();
+				string strDropDownWhere = dataRows[0]["DropDownWhere"].ToString();
+				dataColumn.ExtendedProperties["DropDownList"] = GetDropDownList(strDropDownSQL, strDropDownWhere);
 			}
         }
 
@@ -385,7 +429,7 @@ WHERE NOT EXISTS(   SELECT 1 FROM [Eazly.ConfigContentsColumns] WITH(NOLOCK)
 
                 string strQuery = ServerTemplateResources.TGetContentsID ?? string.Empty;
                 strQuery = GetReplaceExcuteQuery(strQuery, ModuleId, queryID, jsonParam);
-                dt = GetSQLQueryDtaTable(strQuery);
+                dt = GetSQLQueryDataTable(strQuery);
                 DataColumn _chkCol = new DataColumn("_chk", typeof(bool));
                 _chkCol.DefaultValue = false; // 모든 기존 행에 false가 들어감
                 dt.Columns.Add(_chkCol);
@@ -448,7 +492,7 @@ WHERE NOT EXISTS(   SELECT 1 FROM [Eazly.ConfigContentsColumns] WITH(NOLOCK)
                 strQuery = strQuery.Replace("@EntityName", _EntityName);
                 strQuery = strQuery.Replace("@ModuleId", ModuleId.ToString());
 
-                DataTable dt = GetSQLQueryDtaTable(strQuery);
+                DataTable dt = GetSQLQueryDataTable(strQuery);
 
                 if (dt != null && dt.Rows.Count > 0)
                 {
@@ -486,7 +530,7 @@ WHERE NOT EXISTS(   SELECT 1 FROM [Eazly.ConfigContentsColumns] WITH(NOLOCK)
 
 			string strQuery = ServerTemplateResources.TGetConfigContents ?? string.Empty;
 			strQuery = GetReplaceExcuteQuery(strQuery, ModuleId, queryID, "");
-			DataTable dt = GetSQLQueryDtaTable(strQuery);
+			DataTable dt = GetSQLQueryDataTable(strQuery);
 
             if (dt != null && dt.Rows.Count > 0)
             {

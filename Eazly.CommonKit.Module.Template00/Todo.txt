@@ -18,8 +18,8 @@
    : ok - MultiSelect -> SingleSelect로 변경하고 체크 추가
    : ComponentType
     ok - CheckBox
-    - ComboBox: DropDownList 관리 프로그램 개발
-    - TextArea
+    ok - ComboBox: DropDownList 관리 프로그램 개발
+    ok - TextArea: 256자 이상일때 TextBox에서 TextArea로 변경
     - RichTextEditor
     - MultiSelect
     - RadioButton

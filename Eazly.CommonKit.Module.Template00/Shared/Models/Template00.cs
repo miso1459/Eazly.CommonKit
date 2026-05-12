@@ -22,4 +22,10 @@ namespace Eazly.CommonKit.Module.Template00.Models
 		public Boolean IsByOn { get; set; } = false;
 	}
 
+	public class DropDownList
+	{
+		public string FCode { get; set; }
+		public string FDesc { get; set; }
+	}
+
 }
