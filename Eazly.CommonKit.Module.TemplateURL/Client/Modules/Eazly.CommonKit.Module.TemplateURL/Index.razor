@@ -31,12 +31,6 @@
 @code {
     public override string RenderMode => RenderModes.Static;
 
-    public override List<Resource> Resources => new List<Resource>()
-    {
-        new Stylesheet("_content/Eazly.CommonKit.Module.TemplateURL/Module.css"),
-        new Script("_content/Eazly.CommonKit.Module.TemplateURL/Module.js")
-    };
-
     private string _SettingName = string.Empty;
 
     protected override async Task OnInitializedAsync()

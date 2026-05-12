@@ -9,10 +9,6 @@ namespace Eazly.CommonKit.Module.TemplateURL.Startup
     {
         public void ConfigureServices(IServiceCollection services)
         {
-            if (!services.Any(s => s.ServiceType == typeof(ITemplateURLService)))
-            {
-                services.AddScoped<ITemplateURLService, ClientTemplateURLService>();
-            }
         }
     }
 }
